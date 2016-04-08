@@ -1,10 +1,14 @@
 # Greenwood
-A library for creating molecular models and processing molecular dynamics simulations.
-
+A [Clojure](https://clojure.org) library for creating molecular models and processing molecular dynamics simulations.
 
 Better documentation is fourthcoming.
 
-###Example of how to create a box of 35 DCAH molecules at a density of 0.25 g/ml.
+### Installing Clojure and running Greenwood
+[Clojure](https://clojure.org) is a functional programming language based on the syntax of Lisp and designed to run on the Java Virtual Machine.  You can install it using [Leiningen](http://leiningen.org).  Once you have installed Clojure and Leiningen you and downloaded Greenwood, you may cd into the main directory of Greenwood and run it using the command "lein repl". 
+
+
+
+### Example of how to create a box of 35 DCAH molecules at a density of 0.25 g/ml.
 
 First load the needed name spaces.
 <pre><code>
