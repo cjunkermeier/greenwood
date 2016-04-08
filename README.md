@@ -25,11 +25,11 @@ N   11.18361  10.64494  12.34951
 H   10.63120   9.81316  12.43579"))
 </code></pre>
 
+The vector of 3-tupes, lvs defines a cube that is 25 Angstroms on a side.   The function solution from the greenwood.solution namespace places 35 DCAH molecules, each with a random, non-overlapping, position and random orientation.  The write-xyz function from the greenwood.atomic-structure-output namespace creates a string that is written to the the file /somepath/DCAH-gas.xyz.
+
 <pre><code>
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def lvs [[25 0 0] [0 25 0] [0 0 25]])
 (def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
+(spit "/somepath/DCAH-gas.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
 </code></pre>
 
