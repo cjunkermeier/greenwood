@@ -1,11 +1,12 @@
-# greenwood
+# Greenwood
 A library for creating molecular models and processing molecular dynamics simulations.
 
 
 Better documentation is fourthcoming.
 
-##Example of how to create a box of 35 DCAH molecules at a density of 0.25 g/ml.
+###Example of how to create a box of 35 DCAH molecules at a density of 0.25 g/ml.
 
+First load the needed name spaces.
 <pre><code>
 (require '[greenwood.solution :as gsol])
 (require '[greenwood.xyz :as gxyz])
@@ -14,7 +15,7 @@ Better documentation is fourthcoming.
 (require '[greenwood.utils :as gutils])
 </code></pre>
 
-
+The function xyz-str->atoms-readable is one of several methods available in greenwood.xyz for inputting atomic coordinates.
 <pre><code>
 (def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
 C   13.29902  13.45354  12.74665
