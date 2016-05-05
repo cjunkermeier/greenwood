@@ -1,0 +1,456 @@
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gn/neighbors (gxyz/xyz-str->atoms "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579") 0.2 1.4))
+DCAH
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gn/neighbors (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579") 0.2 1.4))
+exit
+(use 'greenwood.xyz)
+(xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579")
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gn/neighbors (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579") 0.2 1.4))
+DCAH
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491")))
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+DCAH
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+HNO3
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+gas-phase-single-component-DCAH
+(* (count DCAH) 35)
+(count gso/gas-phase-single-component-DCAH)
+(count gas-phase-single-component-DCAH)
+(count DCAH)
+(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def v 25.1)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(require '[random-seed.core :refer :all])
+  (:refer-clojure :exclude [rand rand-int rand-nth])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(write-crystx v v v 90.00 90.00 90.00)
+(write-reac-HETATM mol)
+"END"]))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(write-crystx v v v 90.00 90.00 90.00)
+(write-reac-HETATM mol)
+"END"]))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+(set-random-seed! 888)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(set-random-seed! 8)
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(set-random-seed! 81)
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(set-random-seed! 81)
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(require '[random-seed.core :refer :all])
+  (:refer-clojure :exclude [rand rand-int rand-nth])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(require '[random-seed.core :refer :all])
+  (:refer-clojure :exclude [rand rand-int rand-nth])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(rand-int )
+(rand-int 30)
+(set-random-seed! 81)
+(rand-int 30)
+(set-random-seed! 81)
+(rand-int 30)
+(set-random-seed! 81)
+(rand-int 30)
+(rand 30)
+(set-random-seed! 81)
+(rand 30)
+(set-random-seed! 81)
+(rand 30)
+(random-point [0 0 0] [1 1 1])
+(use 'greenwood.math)
+(random-point [0 0 0] [1 1 1])
+(set-random-seed! 81)
+(random-point [0 0 0] [1 1 1])
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(require '[random-seed.core :refer :all])
+  (:refer-clojure :exclude [rand rand-int rand-nth])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(use 'greenwood.mol)
+(random-rotate-mol DCAH)
+(use 'greenwood.math)
+(random-point [0 0 0] [1 1 1])
+(set-random-seed! 81)
+(random-point [0 0 0] [1 1 1])
+(set-random-seed! 81)
+(random-point [0 0 0] [1 1 1])
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(* (count DCAH) 35)
+(count gas-phase-single-component-DCAH)
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.geo" (write-BIOGRF gas-phase-single-component-DCAH v))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase stoichometric DCAH+HNO3, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def v 31.16)
+(def DCAHHNO3-lvs [[v 0 0] [0 v 0] [0 0 v]])
+(def n-DCAHHNO3 (density->nmol [DCAH HNO3] DCAHHNO3-lvs 0.25))
+(sol-density DCAHHNO3-lvs [] (flatten [(take 35 (repeat DCAH))(take 35 (repeat HNO3))]))
+(def gas-phase-DCAH (solution [] DCAHHNO3-lvs [0 0 0] 35  DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+1329902134535
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+exit
+(require 'reaxff)
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+(require '[greenwood.empirical-data :as ged])
+(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+1329902134535
+(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
+(defn write-BIOGRF
+"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
+[mol v name]
+(cstr/join "\n"
+["XTLGRF 200"
+(str "DESCRP" name)
+(reaxff/write-crystx v v v 90.00 90.00 90.00)
+(reaxff/write-reac-HETATM mol)
+"END"]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(set-random-seed! 81)
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.geo" (write-BIOGRF gas-phase-single-component-DCAH v "DCAH"))
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (write-xyz gas-phase-single-component-DCAH))
+(require '[greenwood.xyz :as gxyz])
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
+(require '[greenwood.atomic-structure-output :as gout])
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
+exit
+(require '[greenwood.solution :as gsol])
+(require '[greenwood.xyz :as gxyz])
+(require '[greenwood.atomic-structure-output :as gout])
+(require '[clojure.string :as cstr])
+(require '[greenwood.utils :as gutils])
+;(require '[greenwood.empirical-data :as ged])
+;(require '[greenwood.neighbors :as gn])
+(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595
+C   13.29902  13.45354  12.74665
+N   14.10215  13.81901  13.53892
+C   11.73234  11.80858  12.05561
+N   11.18361  10.64494  12.34951
+H   10.63120   9.81316  12.43579"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;gas phase DCAH, rhp=0.25, n=35
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def v 25.0)
+(def lvs [[v 0 0] [0 v 0] [0 0 v]])
+;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
+(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
+(spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
+exit

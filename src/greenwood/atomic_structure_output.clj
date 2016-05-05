@@ -343,9 +343,15 @@ Usage:  Suppose (def test (xyz-str->atoms 'C 0 0 0 \n C 0.3333 0.6667 0')"
                   characters that can be in a word, if this is the case, give it a maximum number of lines."
     (str (utils/inter-cat-tree ["\\\n" "\t"] (get-atoms timestep false))))
   ([timestep max-lines name-string]
-    (strng/join "\n\n" (map #(str "set " name-string %1 "=\""
+    (strng/join "\n\n" (map #(str "set " name-string  "=\""
                          (utils/inter-cat-tree ["\\\n" "\t"] (get-atoms %2 false)) "\"")
                    (iterate inc 1) (partition-all max-lines timestep)))))
+
+
+(defn write-lvs-cshell
+  [lvs name]
+  (str "set LVS" name " = \""
+       (utils/inter-cat-tree ["\\\n" "\t"] lvs) "\"" ))
 
 
 

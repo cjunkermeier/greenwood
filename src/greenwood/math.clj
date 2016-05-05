@@ -2,7 +2,7 @@
   (:require ;[clojure.core.reducers :as r]
             [greenwood.contrib-math :as cm]
             ;[clojure.set :as cset]
-     )
+   )
   (:refer-clojure :exclude [* - + == /])
   (:use clojure.core.matrix)
   (:use clojure.core.matrix.operators))

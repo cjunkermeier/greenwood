@@ -65,6 +65,18 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 	(basic/new-atom (.intern C2) (* 2/3 (+ (a-one a) (a-two a))) nil nil nil nil 1)]))
 
 
+(defn graphene-QE-unit-cell
+  "The honeycomb lattice has a unit cell represented in Fig. 1 by the
+vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
+Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
+  Usage (graphene-primitive-unit-cell 'C' 'C' 2.461)"
+  [C1 C2 a]
+  (hash-map :lvs [(a-one a) (a-three a) [0 0 15]]
+   :mol [(basic/new-atom (.intern C1) [0 0 0] nil nil nil nil 1)
+   (basic/new-atom (.intern C2) (+ (* 1/3 (a-one a)) (* 2/3 (a-three a))) nil nil nil nil 1)]))
+
+
+
 (defn QE-to-xyz
   "Used with my 2x2 Fgraphene paper."
   [mol alat nxn]
@@ -73,7 +85,7 @@ c (Bohr->Angstrom 46.5)
 A-one [a, 0.0, 0.0]
 A-two [(* -0.5 a) (* 0.5 a (sqrt 3)) 0.0]
 A-three [0.0 0.0 c]]
-(primitive-to-cartesian mol [A-one A-two A-three])))
+(atom-pos (primitive-to-cartesian mol [A-one A-two A-three]))))
 
 
 
@@ -1144,10 +1156,14 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   (let [ngrmol (count grmol)
         added (flatten (doall (map #(as-> (:coordinates %) x
                       (+ [0 0 height] x)
-                       (shift-to admol 0 x))
+                       (shift-to x 0 admol))
                         (take-mol-by-pos grmol nsites))))
-        a-mol (col->mol added :pos (doall (take (count added) (iterate inc ngrmol))))]
+        a-mol (col->mol  :pos (doall (take (count added) (iterate inc ngrmol))) added)]
   (atom-pos (flatten [grmol a-mol]))))
+
+
+
+
 
 
 
@@ -1190,8 +1206,6 @@ if you have, and if you haven't it won't optimize, it just spits the mol back ou
        downC (update-mol (mol-filter-vec :pos (map func downf) mol) :coordinates #(- % v))
        moved (concat upf upC downf downC)]
    (concat (mol-filter-not-vec :pos (map :pos moved) mol) moved)))
-
-
 
 
 
@@ -1248,10 +1262,30 @@ which would allow for irregular surfaces.
   [surface-mol bond adsorbate-mol ads-1 height]
   (let [pos (apply midpoint (map :coordinates (mol-filter-vec :pos bond surface-mol)))
         normal [0 0 1]
-        a-mol (col->mol adsorbate-mol :pos (iterate inc (inc (count surface-mol))))
-        ad-mol (shift-to a-mol ads-1 (+ pos (* (+ 0.0 height) normal)))
-        moved (update-mol (mol-filter-vec :pos bond surface-mol) :coordinates #(+ [0 0 0.0] %))]
-    (atom-pos (flatten [(mol-filter-not-vec :pos bond surface-mol) moved ad-mol]))))
+        a-mol (atom-pos adsorbate-mol)
+        ad-mol (shift-to (+ pos (* (+ 0.0 height) normal))  ads-1  a-mol )
+        moved (update-mol :coordinates #(+ [0 0 0.0] %) (mol-filter-vec :pos bond surface-mol))]
+    (atom-pos (sort-by :pos (flatten [(mol-filter-not-vec :pos bond surface-mol) moved (atom-pos ad-mol (count surface-mol))])))))
+
+
+
+#_(defn bond-centered-adsorption
+  "This will place an adsorbate 'above' a bond midpoint (e.g. an epoxy group over
+the bond connecting two C atoms in graphene). As is, this is incomplete.  I would
+like to change this so that it uses a routine to find the normal to the surface;
+which would allow for irregular surfaces.
+  bond is a 2-tuple of the atoms' :pos"
+  [surface-mol bond adsorbate-mol ads-1 height]
+  (let [pos (apply midpoint (map :coordinates (mol-filter-vec :pos bond surface-mol)))
+        normal [0 0 1]
+        a-mol (atom-pos adsorbate-mol )
+        ad-mol (shift-to (+ pos (* (+ 0.0 height) normal))  ads-1  a-mol )
+        moved (update-mol :coordinates #(+ [0 0 0.0] %) (mol-filter-vec :pos bond surface-mol))]
+    (flatten [surface-mol ad-mol ])))
+
+
+
+
 
 
 

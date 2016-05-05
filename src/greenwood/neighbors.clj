@@ -43,15 +43,15 @@
      projectors)))
 
 
-#_(defn distances-non-atomm [mol atomm]
+(defn distances-non-atomm [mol atomm]
   "This computes the distances between atomm and all of the other atoms in mol.  Thus the length of the resulting seq will be of length (dec (count mol)).
   mol is one time step of the xyz file. atomm is some atom."
   (let [a (:coordinates atomm)]
-  (doall (mapv (comp (partial euclidean a) :coordinates) (mol-filter-not {:pos (:pos atomm)} mol)))))
+  (doall (mapv (comp (partial distance a) :coordinates) (jmol/mol-filter-not {:pos (:pos atomm)} mol)))))
 
 
 
-#_(defn all-distances
+(defn all-distances
   [mol]
   (doall (mapv (partial distances-non-atomm mol) mol)))
 

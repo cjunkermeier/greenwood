@@ -120,7 +120,7 @@
   minimum allowed spacing between mols. It might need to be changed.
   What would probably work better is something based on bond order."
   [mol]
-   (+ 2.1 (apply max (map #(distance [0 0 0] (:coordinates %))(jmol/mol-center mol)))))
+   (+ 1.8 (apply max (map #(distance [0 0 0] (:coordinates %))(jmol/mol-center mol)))))
 
 
 

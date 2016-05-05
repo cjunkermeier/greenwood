@@ -14,10 +14,15 @@
             iota))
 
 
-(defn atom-pos [mol]
+(defn atom-pos
   "This will associate file positions to the :pos of each atom (starting with zero).
-Usage: (atoms-pos mol)"
+Usage: (atoms-pos mol)
+Usage: (atoms-pos mol  5)"
+    ([mol]
     (map (fn [x y] (assoc-in x [:pos] y)) mol (iterate inc 0)))
+    ([mol start]
+     (map (fn [x y] (assoc-in x [:pos] y)) mol (iterate inc start))))
+
 
 
 
@@ -225,13 +230,13 @@ then the usage would be (xyz-str->atoms test)."
                   lines (iterate inc 0))))
 
 
-(defn xyz-str->atoms_readable
+(defn xyz-str->atoms-readable
   "This will parse a string into the atoms struct.  Note that the string should start
 with the first atom, not with the number of atoms in the system.  Also, this
 assumes that there is a newline character between atoms.
 
 Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
-then the usage would be (xyz-str->atoms test)."
+then the usage would be (xyz-str->atoms-readable test)."
   [string]
   (let [lines (strng/split-lines string)]
     (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
@@ -424,6 +429,24 @@ the following would both give the same result (write-xyz test) => '2\n\n C 0 0 0
     (utils/lazy-chunk-file filename #"BIOGRF|XTLGRF")))
 
 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn parse-QE-pw
+  "This will produce a col of atomic coordinates from the output file of Quantum
+Espresso's PW.x program.  As far as I can tell this only works with relaxation results."
+  [filename]
+  (map (comp
+         xyz-str->atoms
+         #(strng/join utils/endline %)
+         #(utils/grep #"\s*[A-Z][a-zA-Z0-9]*([ \t]+)(-*\d+\.\d*[DE]?-?\d*[ \t]*){3}" %)
+         strng/split-lines)
+    (rest (utils/lazy-chunk-file filename #"ATOMIC_POSITIONS \([alat|bohr|angstrom|crystal]*\)\n"))))
 
 
 

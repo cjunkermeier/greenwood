@@ -280,6 +280,26 @@
  (map #(create-singpoint-geo-records (str "C4F300MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/C4F300MPa/N" % )) [1 2 3 4 5 6 7 8 9 10 11 12 13])))
 
 
+#_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/C4F500MPa.geo"
+ (cstrng/join "\n"
+ (map #(create-singpoint-geo-records (str "C4F500MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/C4F500MPa/N" % )) [1 2 3 4 5 6  8 9 10 11 12 13])))
+
+
+
+
+#_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/C2F1256ud0MPa.geo"
+ (cstrng/join ""
+ (map #(create-singpoint-geo-records (str "C2F0MPaN" %) (str "/Volumes/HAWAII/DESORPTION/RAMP/C2F1256ud/N" % )) [1 2 3 4 5 6 7 8 9 10 11 12 13])))
+
+#_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/C2F1256ud100MPa.geo"
+ (cstrng/join "\n"
+ (map #(create-singpoint-geo-records (str "C2F100MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/C2F1256ud100f/N" % )) [1 2 3 4 5 6 7 8 9 10  ])))
+
+#_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/C2F1256ud300MPa.geo"
+ (cstrng/join "\n"
+ (map #(create-singpoint-geo-records (str "C2F300MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/C2F1256ud300MPa/N" % )) [1 2 3 4 5 6 7 8 9 10  12 13])))
+
+
 
 
 
@@ -287,15 +307,17 @@
 
 #_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/all0MPa.geo"
  (cstrng/join ""
- (map #(create-singpoint-geo-records (str "all0MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/all0MPa_larger/N" % "/RESULTS")) [1 2 3 4 5 6 7 8 9 10 11 12 13])))
+ (map #(create-singpoint-geo-records (str "CF0MPaN" %) (str "/Volumes/HAWAII/DESORPTION/RAMP/Sall/N" % )) [1 2 3 4 5 6 7  12 13])))
 
 #_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/all100MPa.geo"
  (cstrng/join "\n"
- (map #(create-singpoint-geo-records (str "all100MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/all100MPa_larger/N" % "/RESULTS")) [1 2 3 4 5 6 7 8 9 10 11 12 13])))
+ (map #(create-singpoint-geo-records (str "CF100MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/all100MPa/N" %)) [2 5 6 7 8 9  12 13])))
 
 #_(spit "/Users/chadjunkermeier/Desktop/SINGLEPOINTGEOS/all300MPa.geo"
  (cstrng/join "\n"
- (map #(create-singpoint-geo-records (str "all300MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/all300MPa_larger/N" % "/RESULTS")) [1 2 3 4 5 6 7 8 9 10 11 12 13])))
+ (map #(create-singpoint-geo-records (str "CF300MPaN" %) (str "/Volumes/HAWAII/DESORPTION/NEGATIVEPRESSURE/all300MPa/N" % )) [2  4  6 7 10 11 12 ])))
+
+
 
 
 
