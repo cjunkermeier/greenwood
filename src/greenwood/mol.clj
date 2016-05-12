@@ -5,7 +5,7 @@
             [greenwood.empirical-data :as ed]
             [clojure.set :as cset])
   (:refer-clojure :exclude [* - + == /])
-  (:use clojure.core.matrix)
+  (:require [clojure.core.matrix :as cmatrix])
   (:use clojure.core.matrix.operators))
 
 
@@ -392,7 +392,7 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
   "Averages the x,y,z coordinates of coords independently,
 returning the averages as a new coordinate."
   [mol]
-  (map jmath/average (transpose (map :coordinates mol))))
+  (map jmath/average (utils/transpose (map :coordinates mol))))
 
 
 
@@ -457,9 +457,9 @@ angle is the amount of ration this is a scalar value."
 of the atoms in mol, leaving the mol in the transformed frame.  The transformation
 could be a rotation, translation, mirror, etc."
   ([mat mol]
-  (update-mol :coordinates #(mmul mat %) mol))
+  (update-mol :coordinates #(cmatrix/mmul mat %) mol))
   ([mat]
-  (update-mol :coordinates #(mmul mat %))))
+  (update-mol :coordinates #(cmatrix/mmul mat %))))
 
 
 (defn replace-mol-coordinates
@@ -505,16 +505,16 @@ am adding this helper function to try to make it work the way that I want."
   [cop pivot pntb]
   (cond
     (= (first pivot) (first pntb))
-    (cross (- pivot pntb) (+ pivot [1 0 0]))
+    (cmatrix/cross (- pivot pntb) (+ pivot [1 0 0]))
     (= (second pivot) (second pntb))
-    (cross (- pivot pntb) (+ pivot [0 1 0]))
+    (cmatrix/cross (- pivot pntb) (+ pivot [0 1 0]))
     (= (last pivot) (last pntb))
     (do
-    (cross (- pivot pntb) (+ pivot [0 0 1]))
+    (cmatrix/cross (- pivot pntb) (+ pivot [0 0 1]))
       (println [cop pivot pntb])
-     (println (cross (- pivot pntb) (+ pivot [0 0 1]))) )
+     (println (cmatrix/cross (- pivot pntb) (+ pivot [0 0 1]))) )
     :else
-    (cross (- pntb pivot) (- cop pivot))))
+    (cmatrix/cross (- pntb pivot) (- cop pivot))))
 
 
 
@@ -536,9 +536,9 @@ the sub mol will rotate closer."
         P (if (:coordinates pntb)
             (:coordinates pntb)
             pntb)
-        X (if (zero? (jmath/setzero (dot (- P V) (- cop V))))
+        X (if (zero? (jmath/setzero (cmatrix/dot (- P V) (- cop V))))
             (do (println "chad")(pivot-axis- cop V P))
-            (do (println "junkermeier")(cross (- P V) (- cop V))))]
+            (do (println "junkermeier")(cmatrix/cross (- P V) (- cop V))))]
     (concat mmol (rotate-mol submol V (+ V X) (- angle)))))
 
 
@@ -603,7 +603,7 @@ There needs to be the same number of elements in col and mol."
 (defn resize-bond
   "This moves atm2 such that the bond length between atm1 and atm2 is lngth."
   [mol atm1 atm2 lngth]
-  (let [a (map (partial * lngth) (normalise (mol-vector mol atm1 atm2)))
+  (let [a (map (partial * lngth) (cmatrix/normalise (mol-vector mol atm1 atm2)))
         b (+ (:coordinates (mol-nth mol atm2)) a)]
     (find-assoc-in [:pos :coordinates] [atm1 b] mol)))
 

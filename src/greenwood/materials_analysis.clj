@@ -1,4 +1,4 @@
-(ns JMD.materials-analysis
+(ns greenwood.materials-analysis
     (:refer-clojure :exclude [* - + == /])
   (:use
         [filters :only [multi-filter]]

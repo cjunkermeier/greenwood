@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [ [org.clojure/clojure "1.8.0"]
                  [org.clojure/math.combinatorics "0.1.1"]
-                 [net.mikera/core.matrix "0.34.0"]
+                 [net.mikera/core.matrix "0.44.0"]
                  [net.mikera/vectorz-clj "0.29.0"]
                   [incanter/incanter "1.9.0"]
                  [iota "1.1.2"]

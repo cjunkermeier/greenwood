@@ -1,8 +1,8 @@
 (ns greenwood.neighbors
   (:require [clojure.core.reducers :as r]
             [greenwood.basics :as basic]
-            [greenwood.mol :as jmol]
-            [greenwood.math :as jmath]
+            [greenwood.mol :as gmol]
+            [greenwood.math :as gmath]
             [greenwood.utils :as utils]
             [clojure.math.combinatorics :as mathcomb])
   (:refer-clojure :exclude [* - + == /])
@@ -47,7 +47,7 @@
   "This computes the distances between atomm and all of the other atoms in mol.  Thus the length of the resulting seq will be of length (dec (count mol)).
   mol is one time step of the xyz file. atomm is some atom."
   (let [a (:coordinates atomm)]
-  (doall (mapv (comp (partial distance a) :coordinates) (jmol/mol-filter-not {:pos (:pos atomm)} mol)))))
+  (doall (mapv (comp (partial distance a) :coordinates) (gmol/mol-filter-not {:pos (:pos atomm)} mol)))))
 
 
 
@@ -81,17 +81,20 @@ Then you need to apply xyz-parser/atom-pos to the mol."
 "Elapsed time: 2.065965 msecs"
 
 
-(defn neighbors-distances [mol atomm min-distance max-distance]
+(defn neighbors-distances
   "In this case mol is one time step of the xyz file.
 If you run this and you get the error message:
 #<CompilerException java.lang.IllegalArgumentException: No value supplied for key: clojure.lang.LazySeq@0
 Then you need to apply xyz-parser/atom-pos to the mol."
+   [mol atomm min-distance max-distance]
   (let [neigh-atoms (filter (comp #(and (> max-distance %) (< min-distance %))
-                              #(distance (:coordinates %) (:coordinates atomm))))
-        neighv (map #(basic/neigh-struct (:pos %) (:species %) (distance (:coordinates %) (:coordinates atomm)) (:coordinates %)))]
+                              #(gmath/euclidean (:coordinates %) (:coordinates atomm))) )
+        neighv (map #(basic/neigh-struct (:pos %) (:species %) (gmath/euclidean (:coordinates %) (:coordinates atomm)) (:coordinates %)))]
 (sequence (comp neigh-atoms neighv) mol)))
 
-;(time (dotimes [_ 1000](neighbors-distances C8F (second C8F) 0.2 1.9)))
+
+
+
 
 
 
@@ -146,22 +149,18 @@ too close."
 
 
 
-(defn remove-overlapping
-  "Use with care."
-  [mol max-distance]
-  (->> (overlapping-atoms mol max-distance)
-       (map first )
-       (flatten )
-       (#(jmol/mol-filter-not-vec :pos % mol) )))
+
+
 
 
 (defn remove-overlapping
   "Use with care."
   [mol max-distance]
-  (->> (overlapping-atoms mol max-distance)
-       (map (comp first sort vec) )
-       (flatten )
-       (#(jmol/mol-filter-not-vec :pos % mol))))
+  (as-> (overlapping-atoms mol max-distance) x
+       (map (comp first sort vec) x)
+       (flatten x)
+       (gmol/mol-filter-not-vec :pos x mol)))
+
 
 
 
@@ -173,7 +172,7 @@ Usage:  (neartest-atom-point graphene [0 0 0])"
   (let [distancevec (map (comp length #(- point-vec (:coordinates %)))  mol)
         minval (apply min distancevec)
         pos (utils/positions #{minval} distancevec)]
-    (jmol/mol-nth mol (first pos))))
+    (gmol/mol-nth mol (first pos))))
 
 
 
@@ -195,9 +194,9 @@ Usage:  (neartest-atom-point graphene [0 0 0])"
   "Computes all of the angles between atomm and it's neighboring atoms, where atomm is at the pivot of the angle."
   [mol atomm]
     (if (>= (count (:neigh atomm)) 2)
-        (map #(basic/angle-struct % (jmath/three-point-angle (:coordinates (jmol/mol-nth mol (first %)))
-                                   (:coordinates (jmol/mol-nth mol (second %)))
-                                   (:coordinates (jmol/mol-nth mol (last %)))))  (atom-angles-trios atomm))
+        (map #(basic/angle-struct % (gmath/three-point-angle (:coordinates (gmol/mol-nth mol (first %)))
+                                   (:coordinates (gmol/mol-nth mol (second %)))
+                                   (:coordinates (gmol/mol-nth mol (last %)))))  (atom-angles-trios atomm))
         nil))
 
 
@@ -236,12 +235,12 @@ on mol first."
               (flatten done)
              (group
                (concat done intermediate)
-               (-> (jmol/mol-filter-vec :pos a whatsleft)
+               (-> (gmol/mol-filter-vec :pos a whatsleft)
                  (flatten )
-                 (jmol/update-mol-name map? i))
-                (jmol/mol-filter-not-vec :pos a whatsleft)
+                 (gmol/update-mol-name map? i))
+                (gmol/mol-filter-not-vec :pos a whatsleft)
                (inc i)))))]
-       (group [] (jmol/update-mol-name (jmol/mol-filter {:pos atom-num} mol) map? 0) (jmol/mol-filter-not {:pos atom-num} mol) 1))))
+       (group [] (gmol/update-mol-name (gmol/mol-filter {:pos atom-num} mol) map? 0) (gmol/mol-filter-not {:pos atom-num} mol) 1))))
 
 
 
@@ -249,7 +248,7 @@ on mol first."
 (defn atoms-near-line
   "Filters a mol so that it gives atoms along a line (or within 0.1 Angstroms)."
   [mol pt1 pt2 distance]
-    (jmol/mol-filter {:coordinates #(> distance (jmath/point-line-distance  pt1 pt2 %))} mol))
+    (gmol/mol-filter {:coordinates #(> distance (gmath/point-line-distance  pt1 pt2 %))} mol))
 
 
 

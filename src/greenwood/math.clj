@@ -42,6 +42,8 @@
   (cross pnt1 pnt2))
 
 
+
+
 (defn magnitude
   "Calculates the sqrt of the sum of the squares of coords"
   ^double [coords]
@@ -60,16 +62,14 @@
 (defn mat-vect-mult [mat vect]
   "Performs matrix vector multplication.
    mat must be a seq of row vectors, not column vectors"
-  (mmul mat vect))
-
-
-
-
+  (map #(reduce + (map * % vect)) mat))
 
 (defn mat-mat-mult [mat1 mat2]
   "Performs matrix matrix multiplication.
    mat1 and mat2 are seqs of row vectors, not column vectors."
-  (mmul mat1 mat2))
+  (let [t (transpose mat2)]
+    (map #(mat-vect-mult t %) mat1)))
+
 
 
 (defn average
@@ -304,7 +304,7 @@ Usage: (vectors-equal? [1 1 1][1 1 0.9999999]) -> true"
    (vectors-equal? vec1 vec2 1.0E-6))
   ([vec1 vec2 tol]
   (let [num-args (= (count vec1) (count vec2))
-        differences (map - vec1 vec2)]
+        differences (- vec1 vec2)]
     (every? true? (cons num-args (map #(tolerance? % tol) differences))))))
 
 

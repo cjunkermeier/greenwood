@@ -19,7 +19,7 @@ projectors for use with a set of atoms coordinates in the crystal (internal)
 coordinates.  Thus, position = a A1 + b A2 + c A3. Where A1, A2, and A3 are
 lattice vectors.
 
-To define a supercell, with atoms in those coordiantes, you only have to add
+To define a supercell, with atoms in those coordinates, you only have to add
 integers to the first, second or utils/third indices.
 
 latoms is the number of unit cells in the A1 direction
@@ -81,7 +81,7 @@ time-step, it will be written first, all others will follow."
 
 (defn create-supercell
   "This will create a supercell whether the atoms (and projectors) are in real
-space cartesian coordiantes or are in crystal (internal) coordinates.  More useful
+space cartesian coordinates or are in crystal (internal) coordinates.  More useful
 for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
@@ -94,7 +94,7 @@ This also could be used to make a bigger supercell out of a supercell."
 
 (defn supercell
   "This will create a supercell whether the atoms (and projectors) are in real
-space cartesian coordiantes or are in crystal (internal) coordinates.  More useful
+space cartesian coordinates or are in crystal (internal) coordinates.  More useful
 for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
@@ -107,7 +107,7 @@ This also could be used to make a bigger supercell out of a supercell."
 
 (defn computation-supercell
   "This will create a supercell whether the atoms (and projectors) are in real
-space cartesian coordiantes or are in crystal (internal) coordinates.  More useful
+space cartesian coordinates or are in crystal (internal) coordinates.  More useful
 for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
@@ -132,7 +132,7 @@ This also could be used to make a bigger supercell out of a supercell."
 
 (defn filtered-supercell
   "This will create a supercell whether the atoms (and projectors) are in real
-space cartesian coordiantes or are in crystal (internal) coordinates.  More useful
+space cartesian coordinates or are in crystal (internal) coordinates.  More useful
 for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
@@ -145,7 +145,7 @@ This also could be used to make a bigger supercell out of a supercell."
 
 (defn filtered-computation-supercell
   "This will create a supercell whether the atoms (and projectors) are in real
-space cartesian coordiantes or are in crystal (internal) coordinates.  More useful
+space cartesian coordinates or are in crystal (internal) coordinates.  More useful
 for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
@@ -163,7 +163,7 @@ This also could be used to make a bigger supercell out of a supercell."
 
 
 (defn internal-supercell
-  "If you want to create a supercell and have it be in internal coordiantes, you
+  "If you want to create a supercell and have it be in internal coordinates, you
 then need to rescale the coordinate system.  This does that."
    [mol lx my nz]
   (let [a (create-supercell mol (cell-projectors lx my nz))
@@ -187,8 +187,10 @@ lvs are the lattice vectors of the primitive unit cell."
 
 
 
+
+
 (defn cartesian-supercell
-  "This will create a supercell in real space cartesian coordiantes.  The :coordiantes
+  "This will create a supercell in real space cartesian coordinates.  The :coordinates
 of the input mol are expected to be in crystal (fractional) coordinates.  The
 output is a vector, where the first element is the supercell lattice vectors and
 the second element is the mol of the atoms in the supercell.
@@ -443,6 +445,98 @@ between atoms."
         (jmdmol/apply-coord-transform-matrix mol trans-M))))
 
 
+
+
+(defn linear-interpolate-supercell
+  "Use this to change the size of a square supercell, including the sizes of the bonds
+between atoms."
+  [mol initial-lvs final-lvs]
+  (let [b1 (/ (length (first final-lvs))(length (first initial-lvs)))
+        b2 (/ (length (second final-lvs))(length (second initial-lvs)))
+        b3 (/ (length (last final-lvs))(length (last initial-lvs)))
+        A  (normalise (first final-lvs))
+        B  (normalise (second final-lvs))
+        C  (normalise (last final-lvs))
+        trans-M [(* b1 A)
+                 (* b2 B)
+                 (* b3 C)]]
+    (as-> mol x
+          (jmdmol/apply-coord-transform-matrix (inverse [A B C]) x)
+          (jmdmol/apply-coord-transform-matrix trans-M x)
+          (jmdmol/apply-coord-transform-matrix [A B C] x))))
+
+
+
+
+(defn cartesian->fractional
+  "Use this to change the size of a square supercell, including the sizes of the bonds
+between atoms."
+  [mol lvs]
+  (let [A  (normalise (first lvs))
+        B  (normalise (second lvs))
+        C  (normalise (last lvs))
+        f #(vector (* (/ 1.0 (length (first lvs))) (dot A (:coordinates %)))
+                   (* (/ 1.0 (length (second lvs))) (dot B (:coordinates %)))
+                   (* (/ 1.0 (length (last lvs))) (dot C (:coordinates %))))]
+    (jmdmol/col->mol :coordinates (map f mol) mol)))
+
+
+
+
+(defn cartesian->fractional
+  "Use this to change the size of a square supercell, including the sizes of the bonds
+between atoms."
+  [mol lvs]
+  (jmdmol/update-mol :coordinates #(jmath/mat-vect-mult (inverse (matrix lvs))  %) mol))
+
+
+
+
+(defn fractional->cartesian
+  "This function is designed to take atoms in a cell (or internal, or primitive)
+coordiante system and transform them into the real space cartesian coordinate
+system.
+lvs are the lattice vectors of the primitive unit cell."
+   [mol lvs]
+    (jmdmol/update-mol  :coordinates
+            #(mmul (transpose lvs) %) mol))
+
+
+
+
+
+
+
+
+;(use 'graphitic :reload)
+#_(def twotwoF1 (QE-to-xyz (xyz/xyz-str->atoms "C        0.000000000   0.000000000   0.006587937
+C        0.170383763   0.340767525  -0.007521498
+C        0.007434192   0.503717096  -0.007521498
+C        0.170383763   0.829616237  -0.007521498
+C        0.496282904  -0.007434192  -0.007521498
+C        0.666666667   0.333333333   0.006587937
+C        0.496282904   0.503717096  -0.007521498
+C        0.659232475   0.829616237  -0.007521498
+F        0.000000000   0.000000000   0.065976559
+F        0.666666667   0.333333333   0.065976559") 4.692215409311123 2))
+;(def twotwoF1_lvs (QE-to-lvs 4.692215409311123 2))
+
+
+;twotwoF1_lvs
+
+;((comp  :coordinates second) twotwoF1)
+
+;(mmul (transpose twotwoF1_lvs) [0.170383763   0.340767525  -0.007521498])
+
+
+
+
+
+
+
+;(cartesian->fractional twotwoF1 lvs)
+
+;(cartesian->fractional twotwoF1 lvs)
 
 
 
