@@ -1016,23 +1016,6 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
     (nth b (first pos))))
 
 
-(def CCCCC (as-> [(:mol (graphene-primitive-unit-cell "C" "C" 2.461)) (gmol/shift [0 0 10] (:mol (graphene-primitive-unit-cell "C" "C" 2.461)))] x
-               (flatten x)
-               (atom-pos x)
-                 (gneigh/neighbors x 0.1 1.8)))
-
-
-CCCCC
-
-(:mol (graphene-primitive-unit-cell "C" "C" 2.461))
-
-
-(same-point? CCCCC (first CCCCC) (second CCCCC))
-
-
-
-(nearest-similar-crystal-point CCCCC (first CCCCC))
-
 
 
 (defn unrolled-nanotube
