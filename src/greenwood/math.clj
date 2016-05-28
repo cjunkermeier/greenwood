@@ -129,8 +129,9 @@
 (defn simple-stats
 "Computes the mean, median, standard deviation, and upper and lower quartiles a seq of values.  Outputs the a hash-map."
 [v]
-(assoc (quantiles v) :mean (average v) :sd (s-sd v)))
-
+  (if (== (count v) 1)
+    (hash-map :mean (first v) :median (first v) :var 0)
+    (assoc (quantiles v) :mean (average v) :var (sum-sqrs [(s-sd v)]))))
 
 
 
@@ -177,8 +178,9 @@ Usage:  (normal-vector [1 0 0] [0 1 0]) => [0.0 0.0 1.0]"
 
 (defn find-angle
   "Returns the angle between the vectors a and b."
-  ^double [a b]
+  [a b]
   (acos (/ (dot a b) (length a) (length b))))
+
 
 
 

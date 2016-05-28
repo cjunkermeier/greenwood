@@ -6,7 +6,7 @@
   (:refer-clojure :exclude [* - + == /])
   (:use clojure.core.matrix.operators
               clojure.core.matrix)
-  (:require [greenwood.solution :as solvant]
+  (:require [greenwood.solution :as gsol]
             [greenwood.empirical-data :as ed]
             [greenwood.mol :as gmol]
             [clojure.set :as cset]
@@ -66,27 +66,14 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 	(basic/new-atom (.intern C2) (* 2/3 (+ (a-one a) (a-two a))) nil nil nil nil 1)]))
 
 
-(defn graphene-QE-unit-cell
-  "The honeycomb lattice has a unit cell represented in Fig. 1 by the
-vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
-Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
-  Usage (graphene-primitive-unit-cell 'C' 'C' 2.461)"
-  [C1 C2 a]
-  (hash-map :lvs [(a-one a) (a-three a) [0 0 15]]
-   :mol [(basic/new-atom (.intern C1) [0 0 0] nil nil nil nil 0)
-   (basic/new-atom (.intern C2) (+ (* 1/3 (a-one a)) (* 2/3 (a-three a))) nil nil nil nil 1)]))
-
 
 
 (defn QE-to-xyz
   "Used with my 2x2 Fgraphene paper."
   [mol alat nxn]
 (let [a (ed/Bohr->Angstrom (* alat nxn))
-c (ed/Bohr->Angstrom 46.5)
-A-one [a, 0.0, 0.0]
-A-two [(* -0.5 a) (* 0.5 a (cmat/sqrt 3)) 0.0]
-A-three [0.0 0.0 c]]
-(atom-pos (primitive-to-cartesian mol [A-one A-two A-three]))))
+      c (ed/Bohr->Angstrom 46.5)]
+(atom-pos (fractional->cartesian mol [[a, 0.0, 0.0] [(* -0.5 a) (* 0.5 a (cmat/sqrt 3)) 0.0] [0.0 0.0 c]]))))
 
 
 
@@ -96,10 +83,20 @@ A-three [0.0 0.0 c]]
 (let [a (ed/Bohr->Angstrom (* alat nxn))
 c (ed/Bohr->Angstrom 46.5)
 A-one [a, 0.0, 0.0]
-A-two [(* -0.5 a) (* 0.5 a (cmat/sqrt 3)) 0.0]
+A-two [(* -0.5 a) (* 0.5 a (greenwood.contrib-math/sqrt 3)) 0.0]
 A-three [0.0 0.0 c]]
 [A-one A-two A-three]))
 
+
+(defn graphene-QE-unit-cell
+  "The honeycomb lattice has a unit cell represented in Fig. 1 by the
+vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
+Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
+  Usage (graphene-primitive-unit-cell 'C' 'C' 2.461)"
+  [C1 C2 a]
+  (hash-map :lvs (QE-to-lvs a 1)
+   :mol [(basic/new-atom (.intern C1) [0 0 0] nil nil nil nil 0)
+   (basic/new-atom (.intern C2) (+ (* 1/3 (a-one a)) (* 2/3 (a-three a))) nil nil nil nil 1)]))
 
 
 

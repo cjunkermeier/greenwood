@@ -59,26 +59,6 @@
 
 
 
-#_(defn neighbors-distances [mol atomm min-distance max-distance]
-  "In this case mol is one time step of the xyz file.
-If you run this and you get the error message:
-#<CompilerException java.lang.IllegalArgumentException: No value supplied for key: clojure.lang.LazySeq@0
-Then you need to apply xyz-parser/atom-pos to the mol."
-  (let [neigh-atoms (doall (filter (comp #(and (> max-distance %) (< min-distance %))
-                              #(distance (:coordinates %) (:coordinates atomm))) (mol-filter-not {:pos (:pos atomm)} mol)))
-        list-positions (map :pos neigh-atoms)
-        list-species (map :species neigh-atoms)
-        list-distances (map #(euclidean (:coordinates %) (:coordinates atomm)) neigh-atoms)]
-    (neigh-struct list-positions list-species list-distances)))
-
-
-;(def a (range 1000))
-
-;(time (dotimes [_ 1000] (sequence (filter  #(and (> 15 %) (< 10 %))) a)))
-"Elapsed time: 1.499796 msecs"
-
-;(time (dotimes [_ 1000] (sequence (comp (filter #(> 15 %)) (filter #(< 10 %))) a)))
-"Elapsed time: 2.065965 msecs"
 
 
 (defn neighbors-distances
@@ -212,7 +192,7 @@ atoms."
 
 
 
-(defn angles
+(defn angles-standalone
   "Use this to compute the angles between the nearest neighbors of all of the
 atoms."
   [mol]

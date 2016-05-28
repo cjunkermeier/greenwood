@@ -1,68 +1,49 @@
-(require '[greenwood.xyz :as xyz] '[greenwood.atomic-structure-output :as out])
+(use 'greenwood.xyz :reload)
+(use 'greenwood.math :reload)
 (require '[greenwood.mol :as gmol])
-(require '[greenwood.supercell :as gsc])
-(require '[graphitic :as g])
+(use 'greenwood.neighbors-species :reload)
+(:refer-clojure :exclude [* - + == /])
+(use 'clojure.core.matrix)
+(use 'clojure.core.matrix.operators)
+(require '[clojure.core.reducers :as r])
+(use 'ultra-csv.core)
 (require '[clojure.string :as cstr])
-(require '[greenwood.basics :as b])
-
-(use 'graphitic :reload)
-
-
-;Here are the list of the 2x2 super cell configurations.
-;	    		4
-;	             \
-;                 \
-;   0              5
-;	 \            /
-;     \          /
-;      1--------6
-;     /          \
-;    /            \
-;   2              7
-;    \
-;     \
-;      3
-
-(def OHOreo [
-  [[[0 1]] [2]]   ;done
-  [[[0 1] [2 3]] [5 6]]
-  [[[0 1] [4 5]] [2 6]]
-  [[[0 1] [5 6]] [2 7]]
-  [[[0 1] [6 7]] [2 5]]])
 
 
 
+(defn total_and_average_bond_order
+  [b puc]
+  (let [Fbondorder (as-> (:mol puc) x
+                     (gmol/mol-filter {:species "F"} x)
+                     (map :charge x)
+                      (average x))
+        adsorbedCbondorder (as-> (:mol puc) x
+                             (neighbors-maxdis x  b)
+                             (gmol/mol-filter {:species "C", :neigh #(some (fn [y](= "F" y)) (map :nspecies %))} x)
+                             (map :charge x)
+                             [ x (average x)])
+        notadsorbedCbondorder (as-> (:mol puc) x
+                             (neighbors-maxdis x  b)
+                             (gmol/mol-filter {:species "C", :neigh #(not-any? (fn [y](= "F" y)) (map :nspecies %))} x)
+                              (if (empty? x) [() "NA"]
+                                   (let [y (map :charge x)]
+                                     [y (average y)])))
+        Name (first (cstr/split (:name puc) #"N"))
+        N (read-string (second (cstr/split (:name puc) #"N")))]
+    (hash-map   :SYSTEM Name :N N
+                    :mean.Fbo Fbondorder
+                    :mean.aCbo (second adsorbedCbondorder)
+                    :mean.naCbo (second notadsorbedCbondorder)
+                    :mean.Cbo (average (flatten [(first adsorbedCbondorder)(first notadsorbedCbondorder)])))))
 
-(def names ["O01OH2" "O0123OH56" "O0145OH26" "O0156OH27" "O0167OH25"])
 
-
-
-
-
-
-
-(defn make-structure
-[O OH name]
-(let [g (g/graphene-QE-unit-cell "C" "C" 2.461)
-        C-sc (gsc/supercell (:mol g) (:lvs g)  2 2 1)
-      GO  (loop [sc (xyz/atom-pos (:mol C-sc))
-             b (first O)
-             bleft (rest O)]
-            (if (nil? b)
-                (as-> sc x
-                      (gmol/shift [0 0 5] x)
-                      (assoc C-sc :mol  x))
-                (recur
-                 (g/bond-centered-adsorption sc b [(b/new-atom "O" [0.0 0.0 0.0] nil nil nil nil 999)] 0 1.22)
-                (first bleft)
-                (rest bleft))))
-    GOH (assoc GO :mol (g/top-site-adsorption (:mol GO) [(b/new-atom "O" [0.0 0.0 0.0] nil nil nil nil 0)(b/new-atom "H" [0.0 0.0 1.02] nil nil nil nil 999)] OH 1.47))
-    ]
-  (str
-  (out/write-xyz-cshell (:mol GOH)  5000 name)
-   "\n\n"
-  (out/write-lvs-cshell (:lvs GOH) name)
-   "\n\n")))
+(defn total_and_average_bond_order
+  [b puc]
+  (let [notadsorbedCbondorder (as-> (:mol puc) x
+                             (neighbors-maxdis x  b)
+                             (gmol/mol-filter {:species "C", :neigh #(not-any? (fn [y](= "F" y)) (map :nspecies %))} x)
+                              (map :pos x))]
+    notadsorbedCbondorder))
 
 
 
@@ -71,11 +52,23 @@
 
 
 
-(spit "/Users/chadjunkermeier/Desktop/sandra_epoxy.xyz"
-      (cstr/join "\n" (map  #(make-structure (first %1)(second %1) %2) OHOreo names)))
+#_(->> (foldable-chunks "/Users/chadjunkermeier/Desktop/Cdisplacement_energy/xmolout")
+     (r/map (partial parse-xmolout 5))
+     (r/map (partial total_and_average_bond_order 2.6))
+     (into [])
+     (take-nth 2)
+     (ultra-csv.core/write-csv! "/Users/chadjunkermeier/Desktop/Cdisplacement_energy/bond-order.csv"))
 
+#_(def ind (->> (index-xyz "/Users/chadjunkermeier/Desktop/Cdisplacement_energy/xmolout")
+     (take-last 4 )
+     (take-nth 2)))
 
+#_(->> (foldable-chunks "/Users/chadjunkermeier/Desktop/Cdisplacement_energy/xmolout" ind)
+     (r/map (partial parse-xmolout 5))
+     (r/map (partial total_and_average_bond_order 2.6))
+     (into [])
+)
 
+(* 1180300 1154)
 
-
-
+(take-nth 2 [0 1 2 3])

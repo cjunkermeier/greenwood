@@ -2,7 +2,7 @@
   (:require [greenwood.basics :as b]
             [greenwood.contrib-math :as cmath]
             [greenwood.utils :as utils]
-            [greenwood.math :as jmath]
+            [greenwood.math :as gmath]
             [greenwood.mol :as jmdmol]
             [greenwood.neighbors :as jmdngh]
             [greenwood.xyz :as xyz]
@@ -11,6 +11,49 @@
   (:refer-clojure :exclude [* - + == /])
   (:use clojure.core.matrix)
   (:use clojure.core.matrix.operators))
+
+
+
+
+
+(defn cartesian->fractional
+    "This function is designed to take atoms in a fractional (or internal, or primitive)
+coordiante system and transform them into the real space cartesian coordinate
+system.
+
+mol is the vector of atoms
+lvs is the lattice vectors."
+  [mol lvs]
+  (jmdmol/update-mol :coordinates #(mmul ((comp transpose inverse) lvs)  %) mol))
+
+
+
+
+(defn fractional->cartesian
+  "This function is designed to take atoms in a cell (or internal, or primitive)
+coordiante system and transform them into the real space cartesian coordinate
+system.
+lvs are the lattice vectors of the primitive unit cell."
+   [mol lvs]
+    (jmdmol/update-mol  :coordinates
+            #(mmul (transpose lvs) %) mol))
+
+
+
+(defn scale-lat-vec
+  "Rescales lattice vectors to use for interpolating structures."
+  [lvs factor]
+  (letfn [(scale-vec [x] (* factor x))]
+    (map scale-vec lvs)))
+
+
+(defn linear-interpolate-supercell
+  "Use this to linear interpolate the cartesian coordinates of atoms in mol."
+  [mol initial-lvs final-lvs]
+  (as-> mol x
+   (cartesian->fractional x initial-lvs)
+   (fractional->cartesian x final-lvs)))
+
 
 
 (defn cell-projectors
@@ -100,7 +143,7 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3]
   (b/unitcell  [(* la1 (first lvs)) (* ma2 (second lvs)) (* na3 (last lvs))]
-             (flatten (map #(jmdmol/shift % mol) (cell-projectors lvs la1 ma2 na3)))))
+             (xyz/atom-pos (flatten (map #(jmdmol/shift % mol) (cell-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -162,29 +205,6 @@ This also could be used to make a bigger supercell out of a supercell."
 
 
 
-(defn internal-supercell
-  "If you want to create a supercell and have it be in internal coordinates, you
-then need to rescale the coordinate system.  This does that."
-   [mol lx my nz]
-  (let [a (create-supercell mol (cell-projectors lx my nz))
-        r #(map / % [lx my nz])]
-    (jmdmol/update-mol :coordinates r a)))
-
-
-
-
-(defn primitive-to-cartesian
-  "This function is designed to take atoms in a cell (or internal, or primitive)
-coordiante system and transform them into the real space cartesian coordinate
-system.
-lvs are the lattice vectors of the primitive unit cell."
-   [mol lvs]
-    (jmdmol/update-mol  :coordinates
-            #(+ (* (first %) (first lvs))
-             (* (second %)  (second lvs))
-             (* (last %)  (last lvs))) mol))
-
-
 
 
 
@@ -200,7 +220,7 @@ This also could be used to make a bigger supercell out of a supercell.
 Usage: (create-cartesian-supercell graphene [2.461 0 0] [1.2305 2.13129 0] [0.0 0.0 0.0] 4 4 1)
 Usage: (create-cartesian-supercell graphene 2.461 2.461 0 (/ Math/PI 2) (/ Math/PI 2) (/ Math/PI 3) 4 4 1)"
   [mol lvs la1 ma2 na3]
-  (let [atoms (primitive-to-cartesian mol lvs)
+  (let [atoms (fractional->cartesian mol lvs)
         projs (cell-projectors lvs la1 ma2 na3)]
     (hash-map :lvs [(* la1 (first lvs))
              (* ma2 (second lvs))
@@ -268,15 +288,15 @@ give false positives.
 Usage: (drop-symmetry-redundant-points [[0.5 0.5 0.5] [0.75 0.75 0.75] [1.5 1.5 1.5]] [[0 0 0][1 1 1][-1 -1 -1]])
   => [(0.75 0.75 0.75) (1.5 1.5 1.5)]"
   [points projectors]
-  (let [new-projectors (filter #(not (jmath/origin? %)) projectors) ;gets rid of [0 0 0] projector
-        new-points (map #(map jmath/round-decimal %) points)] ;may not be needed
+  (let [new-projectors (filter #(not (gmath/origin? %)) projectors) ;gets rid of [0 0 0] projector
+        new-points (map #(map gmath/round-decimal %) points)] ;may not be needed
   (letfn [(test-points [in-points out-points]
             (if (empty? in-points)
               out-points
               (let [fpoint (first in-points)
                     compare-to (utils/flatten-n 1 (map (fn [x](map #(map + x %) (rest in-points))) new-projectors))]
                 (recur (rest in-points)
-                  (if (some true? (map #(jmath/vectors-equal? % fpoint) compare-to))
+                  (if (some true? (map #(gmath/vectors-equal? % fpoint) compare-to))
                     out-points
                     (conj out-points fpoint))))))]
     (test-points new-points []))))
@@ -336,17 +356,17 @@ Usage:  "
       (cartesian->create-surface atoms origin nn1 nn2 nn3 lvs C1 C3 x y z epsilon)))
 
   ([atoms origin n1 n2 n3 lvs C1 C3 x y z epsilon]
-    (let [f #(mmul (jmath/rotate-vec-to-axis C1 :x) %)
+    (let [f #(mmul (gmath/rotate-vec-to-axis C1 :x) %)
           alpha (Math/asin (/ (dot C3 [0 0 1]) (length C3)))
           [xx yy zz] (* -0.5 [x y z])
           [xxx yyy zzz] (* 0.5 [x y z])
           projectors (computation-projectors lvs n1 n2 n3)
-          box? #(and (jmath/tolerated-gte (first %) xx epsilon)
-                  (jmath/tolerated-lt (first %) xxx epsilon)
-                  (jmath/tolerated-gte (second %) yy epsilon)
-                  (jmath/tolerated-lt (second %) yyy epsilon)
-                  (jmath/tolerated-gte (last %) zz epsilon)
-                  (jmath/tolerated-lt (last %) zzz epsilon))]
+          box? #(and (gmath/tolerated-gte (first %) xx epsilon)
+                  (gmath/tolerated-lt (first %) xxx epsilon)
+                  (gmath/tolerated-gte (second %) yy epsilon)
+                  (gmath/tolerated-lt (second %) yyy epsilon)
+                  (gmath/tolerated-gte (last %) zz epsilon)
+                  (gmath/tolerated-lt (last %) zzz epsilon))]
       ((comp
          #(jmdmol/mol-filter {:coordinates box?} %)
          #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
@@ -393,7 +413,7 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
 
   ([atoms origin n1 n2 n3 lvs C1 C3 x y z epsilon]
     (let [[A1 A2 A3] lvs
-          f #(mmul (jmath/rotate-vec-to-axis C1 :x) %)
+          f #(mmul (gmath/rotate-vec-to-axis C1 :x) %)
           alpha (Math/asin (/ (dot C3 [0 0 1]) (length C3)))
           cart-origin (+ (* (first origin) A1)
                         (* (second origin) A2)
@@ -401,19 +421,19 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
           projectors (computation-projectors n1 n2 n3)
           [xx yy zz] (* -0.5 [x y z])
           [xxx yyy zzz] (* 0.5 [x y z])
-          box? #(and (jmath/tolerated-gte (first %) xx epsilon)
-                  (jmath/tolerated-lt (first %) xxx epsilon)
-                  (jmath/tolerated-gte (second %) yy epsilon)
-                  (jmath/tolerated-lt (second %) yyy epsilon)
-                  (jmath/tolerated-gte (last %) zz epsilon)
-                  (jmath/tolerated-lt (last %) zzz epsilon))]
+          box? #(and (gmath/tolerated-gte (first %) xx epsilon)
+                  (gmath/tolerated-lt (first %) xxx epsilon)
+                  (gmath/tolerated-gte (second %) yy epsilon)
+                  (gmath/tolerated-lt (second %) yyy epsilon)
+                  (gmath/tolerated-gte (last %) zz epsilon)
+                  (gmath/tolerated-lt (last %) zzz epsilon))]
       (b/unitcell [[x 0.0 0.0] [0.0 y 0.0] [0.0 0.0 z]]
       ((comp
          #(jmdmol/mol-filter {:coordinates box?} %)
          #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
          #(jmdmol/update-mol :coordinates f %)
          #(jmdmol/shift (* -1 cart-origin) %)
-         #(primitive-to-cartesian % lvs))
+         #(fractional->cartesian % lvs))
         (create-supercell atoms projectors))))))
 
 
@@ -422,129 +442,11 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
 
 
 
-(defn scale-lat-vec
-  "Rescales lattice vectors to use for interpolating structures."
-  [lvs factor]
-  (letfn [(scale-vec [x] (* factor x))]
-    (map scale-vec lvs)))
-
-
-
-
-(defn linear-interpolate-supercell
-  "Use this to change the size of a square supercell, including the sizes of the bonds
-between atoms."
-  [mol initial-lvs final-lvs]
-  (let [b1 (/ (length (first final-lvs))(length (first initial-lvs)))
-        b2 (/ (length (second final-lvs))(length (second initial-lvs)))
-        b3 (/ (length (last final-lvs))(length (last initial-lvs)))
-        trans-M [(* b1 (jmath/unit-vec (first initial-lvs)))
-                 (* b2 (jmath/unit-vec (second initial-lvs)))
-                 (* b3 (jmath/unit-vec (last initial-lvs)))]]
-    (do (println (str "\nb3" b3 "\n"))
-        (jmdmol/apply-coord-transform-matrix mol trans-M))))
-
-
-
-
-(defn linear-interpolate-supercell
-  "Use this to change the size of a square supercell, including the sizes of the bonds
-between atoms."
-  [mol initial-lvs final-lvs]
-  (let [b1 (/ (length (first final-lvs))(length (first initial-lvs)))
-        b2 (/ (length (second final-lvs))(length (second initial-lvs)))
-        b3 (/ (length (last final-lvs))(length (last initial-lvs)))
-        A  (normalise (first final-lvs))
-        B  (normalise (second final-lvs))
-        C  (normalise (last final-lvs))
-        trans-M [(* b1 A)
-                 (* b2 B)
-                 (* b3 C)]]
-    (as-> mol x
-          (jmdmol/apply-coord-transform-matrix (inverse [A B C]) x)
-          (jmdmol/apply-coord-transform-matrix trans-M x)
-          (jmdmol/apply-coord-transform-matrix [A B C] x))))
-
-
-
-
-(defn cartesian->fractional
-  "Use this to change the size of a square supercell, including the sizes of the bonds
-between atoms."
-  [mol lvs]
-  (let [A  (normalise (first lvs))
-        B  (normalise (second lvs))
-        C  (normalise (last lvs))
-        f #(vector (* (/ 1.0 (length (first lvs))) (dot A (:coordinates %)))
-                   (* (/ 1.0 (length (second lvs))) (dot B (:coordinates %)))
-                   (* (/ 1.0 (length (last lvs))) (dot C (:coordinates %))))]
-    (jmdmol/col->mol :coordinates (map f mol) mol)))
-
-
-
-
-(defn cartesian->fractional
-  "Use this to change the size of a square supercell, including the sizes of the bonds
-between atoms."
-  [mol lvs]
-  (jmdmol/update-mol :coordinates #(jmath/mat-vect-mult (inverse (matrix lvs))  %) mol))
-
-
-
-
-(defn fractional->cartesian
-  "This function is designed to take atoms in a cell (or internal, or primitive)
-coordiante system and transform them into the real space cartesian coordinate
-system.
-lvs are the lattice vectors of the primitive unit cell."
-   [mol lvs]
-    (jmdmol/update-mol  :coordinates
-            #(mmul (transpose lvs) %) mol))
-
-
-
-
-
-
-
-
-;(use 'graphitic :reload)
-#_(def twotwoF1 (QE-to-xyz (xyz/xyz-str->atoms "C        0.000000000   0.000000000   0.006587937
-C        0.170383763   0.340767525  -0.007521498
-C        0.007434192   0.503717096  -0.007521498
-C        0.170383763   0.829616237  -0.007521498
-C        0.496282904  -0.007434192  -0.007521498
-C        0.666666667   0.333333333   0.006587937
-C        0.496282904   0.503717096  -0.007521498
-C        0.659232475   0.829616237  -0.007521498
-F        0.000000000   0.000000000   0.065976559
-F        0.666666667   0.333333333   0.065976559") 4.692215409311123 2))
-;(def twotwoF1_lvs (QE-to-lvs 4.692215409311123 2))
-
-
-;twotwoF1_lvs
-
-;((comp  :coordinates second) twotwoF1)
-
-;(mmul (transpose twotwoF1_lvs) [0.170383763   0.340767525  -0.007521498])
-
-
-
-
-
-
-
-;(cartesian->fractional twotwoF1 lvs)
-
-;(cartesian->fractional twotwoF1 lvs)
-
-
-
 (defn define-cell
   "This defines the bounding box (parallelepiped) of a unit cell.
   The output is a vector where the first two elements are opposite
   corners of the bounding box and the last three elements are the
-  unit jmath/normal-vectors of the sides of the parallelepiped.  The
+  unit gmath/normal-vectors of the sides of the parallelepiped.  The
   normal vectors point into the box for those sides (planes) that
   have the point [0 0 0] in them."
   ([lvs]
@@ -553,9 +455,9 @@ F        0.666666667   0.333333333   0.065976559") 4.692215409311123 2))
    (let [[l1 l2 l3] lvs]
      [offset
         (+ l1 l2 l3 offset)
-        (jmath/normal-vector l2 l3)
-        (jmath/normal-vector l3 l1)
-        (jmath/normal-vector l1 l2)])))
+        (gmath/normal-vector l2 l3)
+        (gmath/normal-vector l3 l1)
+        (gmath/normal-vector l1 l2)])))
 
 
 
@@ -567,12 +469,12 @@ F        0.666666667   0.333333333   0.065976559") 4.692215409311123 2))
         n (- point (second cell))
         p? (partial <= 0 )
         n? (partial >= 0 )]
-    (and (p? (jmath/dot-product m (nth cell 2)))
-         (p? (jmath/dot-product m (nth cell 3)))
-         (p? (jmath/dot-product m (nth cell 4)))
-         (n? (jmath/dot-product n (nth cell 2)))
-         (n? (jmath/dot-product n (nth cell 3)))
-         (n? (jmath/dot-product n (nth cell 4))))))
+    (and (p? (gmath/dot-product m (nth cell 2)))
+         (p? (gmath/dot-product m (nth cell 3)))
+         (p? (gmath/dot-product m (nth cell 4)))
+         (n? (gmath/dot-product n (nth cell 2)))
+         (n? (gmath/dot-product n (nth cell 3)))
+         (n? (gmath/dot-product n (nth cell 4))))))
 
 
 
@@ -599,7 +501,7 @@ F        0.666666667   0.333333333   0.065976559") 4.692215409311123 2))
            (+ (* -1 A3 B2 C1) (* A2 B3 C1) (* A3 B1 C2) (* -1 A1 B3 C2) (* -1 A2 B1 C3) (* A1 B2 C3)))
         c (/ (+ (* -1 A3 B2 P1) (* A2 B3 P1) (* A3 B1 P2) (* -1 A1 B3 P2) (* -1 A2 B1 P3) (* A1 B2 P3) (* A3 B2 V1) (* -1 A2 B3 V1) (* -1 A3 B1 V2) (* A1 B3 V2) (* A2 B1 V3) (* -1 A1 B2 V3))
            (+ (* -1 A3 B2 C1) (* A2 B3 C1) (* A3 B1 C2) (* -1 A1 B3 C2) (* -1 A2 B1 C3) (* A1 B2 C3)))]
-        (every? #(and (jmath/tolerated-gte % 0.0) (jmath/tolerated-gte 1.0 %))  [a b c])))
+        (every? #(and (gmath/tolerated-gte % 0.0) (gmath/tolerated-gte 1.0 %))  [a b c])))
 
 
 
@@ -639,7 +541,7 @@ Usage: (create-surface-cartesiann graphene [0 0 0] 50 50 1
 
   ([atoms origin n1 n2 n3 lvs C1 C3 x y z epsilon]
     (let [[A1 A2 A3] lvs
-          f #(mmul (jmath/rotate-vec-to-axis C1 :x) %)
+          f #(mmul (gmath/rotate-vec-to-axis C1 :x) %)
           alpha (Math/asin (/ (dot C3 [0 0 1]) (length C3)))
           cart-origin (+ (* (first origin) A1)
                         (* (second origin) A2)
@@ -647,19 +549,19 @@ Usage: (create-surface-cartesiann graphene [0 0 0] 50 50 1
           projectors (computation-projectors n1 n2 n3)
           [xx yy zz] (* -0.5 [x y z])
           [xxx yyy zzz] (* 0.5 [x y z])
-          box? #(and (jmath/tolerated-gte (first %) xx epsilon)
-                  (jmath/tolerated-lt (first %) xxx epsilon)
-                  (jmath/tolerated-gte (second %) yy epsilon)
-                  (jmath/tolerated-lt (second %) yyy epsilon)
-                  (jmath/tolerated-gte (last %) zz epsilon)
-                  (jmath/tolerated-lt (last %) zzz epsilon))]
+          box? #(and (gmath/tolerated-gte (first %) xx epsilon)
+                  (gmath/tolerated-lt (first %) xxx epsilon)
+                  (gmath/tolerated-gte (second %) yy epsilon)
+                  (gmath/tolerated-lt (second %) yyy epsilon)
+                  (gmath/tolerated-gte (last %) zz epsilon)
+                  (gmath/tolerated-lt (last %) zzz epsilon))]
         (create-filtered-supercell atoms projectors
                           (comp
          (partial jmdmol/mol-filter {:coordinates box?})
          #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
          #(jmdmol/update-mol :coordinates f %)
          #(jmdmol/shift (* -1 cart-origin) %)
-         #(primitive-to-cartesian % lvs))))))
+         #(fractional->cartesian % lvs))))))
 
 
 
@@ -705,15 +607,15 @@ lattice parameters for mol."
   ([lvs1 lvs2]
     (let [lvss  [lvs1 lvs2]]
        (map #(hash-map :x %1 :y %2 :z %3)
-           (apply multiples (map (comp jmath/round-decimal length first) lvss))
-           (apply multiples (map (comp jmath/round-decimal length second) lvss))
-           (apply multiples (map (comp jmath/round-decimal length last) lvss)))))
+           (apply multiples (map (comp gmath/round-decimal length first) lvss))
+           (apply multiples (map (comp gmath/round-decimal length second) lvss))
+           (apply multiples (map (comp gmath/round-decimal length last) lvss)))))
   ([lvs1 lvs2 & more]
     (let [lvss  [lvs1 lvs2 more]]
        (map #(hash-map :x %1 :y %2 :z %3)
-           (apply multiples (map (comp jmath/round-decimal length first) lvss))
-           (apply multiples (map (comp jmath/round-decimal length second) lvss))
-           (apply multiples (map (comp jmath/round-decimal length last) lvss))))))
+           (apply multiples (map (comp gmath/round-decimal length first) lvss))
+           (apply multiples (map (comp gmath/round-decimal length second) lvss))
+           (apply multiples (map (comp gmath/round-decimal length last) lvss))))))
 
 
 

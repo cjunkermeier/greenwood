@@ -268,16 +268,16 @@ lattice type symbol used is H."
       (write-pdb-HETATM mol)
       (write-pdb-connect mol)
       "END")))
-  ([mol lat-vec]
+  ([mol]
     (if (nil? ((comp :neigh first) mol))
                  (str "HEADER" utils/endline
-                  "AUTHOR    GENERATED IN JMD" utils/endline
-      (write-pdb-lat (jmath/lvs->parameters lat-vec) "P 1")
+                  "AUTHOR    GENERATED IN GRNWD"
+                      utils/endline
                  (write-pdb-HETATM mol)
                  "END")
     (str "HEADER" utils/endline
-      "AUTHOR    GENERATED IN JMD" utils/endline
-      (write-pdb-lat (jmath/lvs->parameters lat-vec) "P 1")
+      "AUTHOR    GENERATED IN GRNWD"
+         utils/endline
       (write-pdb-HETATM mol)
       (write-pdb-connect mol)
       "END"))))
