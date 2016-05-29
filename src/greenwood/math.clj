@@ -44,7 +44,7 @@
 
 
 
-(defn magnitude
+#_(defn magnitude
   "Calculates the sqrt of the sum of the squares of coords"
   ^double [coords]
   (length coords))
@@ -84,8 +84,7 @@
   (let [c (/ (count v) 2)]
   (if (integer? c)
     ((comp average (partial take 2) (partial drop (dec (floor c))) sort) v))
-    ((comp first (partial drop (dec c)) sort) v)
-    ))
+    ((comp first (partial drop (dec c)) sort) v)))
 
 
 
@@ -95,8 +94,7 @@
   (let [c (/ (count v) 2)]
   (if (integer? c)
     ((comp average (partial take 2) (partial drop (dec (floor c))) sort) v)
-    ((comp first (partial drop (dec c)) sort) v)
-    )))
+    ((comp first (partial drop (dec c)) sort) v))))
 
 
 (defn quantiles
@@ -122,16 +120,20 @@
 "Computes the sample standard deviation of a vector of values.
   If you collect data from all members of a population or set, you apply the population standard deviation."
   [v]
+  (if (== (- (apply max (map - v))) (apply min v))
+    0
   (let [mean (average v)]
- (sqrt (/ (sum-sqrs (- v mean)) (dec (count v))))))
+ (sqrt (/ (sum-sqrs (- v mean)) (dec (count v)))))))
 
 
 (defn simple-stats
 "Computes the mean, median, standard deviation, and upper and lower quartiles a seq of values.  Outputs the a hash-map."
-[v]
-  (if (== (count v) 1)
-    (hash-map :mean (first v) :median (first v) :var 0)
+ [v]
+  (if (== (- (apply max (map - v))) (apply min v))
+    (hash-map :upper nil :lower nil :median (median v) :mean (average v) :var 0)
     (assoc (quantiles v) :mean (average v) :var (sum-sqrs [(s-sd v)]))))
+
+
 
 
 
@@ -688,6 +690,11 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
         fa (map f v-reals)
         m (apply max (map f v-reals))]
         (map (comp int (partial * m)) v-reals)))
+
+
+
+
+
 
 
 

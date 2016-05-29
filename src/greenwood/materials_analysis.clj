@@ -10,10 +10,7 @@
    [greenwood.neighbors :as gn]
    [greenwood.utils  :as gutil]
         [incanter.core :as inccore ]
-        [incanter.optimize :as incopt]))
-
-
-
+[incanter.optimize :as incopt]))
 
 
 
