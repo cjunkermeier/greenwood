@@ -1,7 +1,7 @@
 (ns greenwood.mol
   (:require ;[clojure.core.reducers :as r]
             [greenwood.utils :as utils]
-            [greenwood.math :as jmath]
+            [greenwood.math :as gmath]
             [greenwood.empirical-data :as ed]
             [clojure.set :as cset])
   (:refer-clojure :exclude [* - + == /])
@@ -392,7 +392,8 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
   "Averages the x,y,z coordinates of coords independently,
 returning the averages as a new coordinate."
   [mol]
-  (map jmath/average (utils/transpose (map :coordinates mol))))
+  (map gmath/average (utils/transpose (map :coordinates mol))))
+
 
 
 
@@ -402,6 +403,7 @@ returning the averages as a new coordinate."
    (update-mol :coordinates #(+ % pnt)))
   ([pnt mol]
     (update-mol :coordinates #(+ % pnt)  mol)))
+
 
 
 
@@ -426,19 +428,24 @@ returning the averages as a new coordinate."
 
 
 
+
+
 (defn rotate-mol
   "pnt2 and pnt1 are both 3-tuples that define the axis.
 angle is the amount of ration this is a scalar value."
    [mol pt1 pt2 angle]
-  (let [f #(jmath/the-rotation-function % pt1 pt2 angle)]
+  (let [f #(gmath/the-rotation-function % pt1 pt2 angle)]
            (update-mol :coordinates f mol)))
+
+
+
 
 
 (defn random-rotate-mol
   "Usage: (random-rotate-mol DMMP) "
   ([mol]
-         (let [pnt1 (jmath/random-point [0 0 0] [1 1 1])
-               pnt2 (jmath/random-point  [2 2 2] [4 4 4])]
+         (let [pnt1 (gmath/random-point [0 0 0] [1 1 1])
+               pnt2 (gmath/random-point  [2 2 2] [4 4 4])]
            (random-rotate-mol mol pnt1 pnt2)))
   ([mol pnt1 pnt2]
     (let [angle (* (rand 2) Math/PI)]
@@ -446,10 +453,12 @@ angle is the amount of ration this is a scalar value."
   ([mol pnt1 pnt2 angle]
     (let [pnt3 (first
                 (drop-while
-                       (fn [x](> (jmath/find-angle (- pnt2 pnt1) (map - x pnt1))
+                       (fn [x](> (gmath/find-angle (- pnt2 pnt1) (map - x pnt1))
                                 angle))
-                  (repeatedly #(jmath/random-point [2 2 2] [4 4 4]))))]
+                  (repeatedly #(gmath/random-point [2 2 2] [4 4 4]))))]
       (random-rotate-mol pnt1 pnt3))))
+
+
 
 
 (defn apply-coord-transform-matrix
@@ -460,6 +469,9 @@ could be a rotation, translation, mirror, etc."
   (update-mol :coordinates #(cmatrix/mmul mat %) mol))
   ([mat]
   (update-mol :coordinates #(cmatrix/mmul mat %))))
+
+
+
 
 
 (defn replace-mol-coordinates
@@ -474,6 +486,8 @@ struct unchanged."
   (map #(assoc-in %1 [:coordinates] (:coordinates %2)) replace-into-mol replace-from-mol))
 
 
+
+
 (defn coords->zero
   "Many times in the creation of mols we end up with positions that have a
 coordinate that should be zero, but is represented by something stupid
@@ -481,9 +495,9 @@ like: 3.3306690738754696E-16.  I hate that.  This function gets rid of those
 nonzero zeros.  This is also of importance when this is used to make input for
 legacy code."
   ([mol]
-  (update-mol :coordinates #(map jmath/setzero %) mol))
+  (update-mol :coordinates #(map gmath/setzero %) mol))
   ([]
-  (update-mol :coordinates #(map jmath/setzero %))))
+  (update-mol :coordinates #(map gmath/setzero %))))
 
 
 
@@ -519,6 +533,7 @@ am adding this helper function to try to make it work the way that I want."
 
 
 
+
 (defn rotate-sub-mol
   "This is used to rotate part of a mol with respect to the rest of the mol.
 This works a lot like how GuassView works.  After defining the mol and submol you
@@ -536,10 +551,12 @@ the sub mol will rotate closer."
         P (if (:coordinates pntb)
             (:coordinates pntb)
             pntb)
-        X (if (zero? (jmath/setzero (cmatrix/dot (- P V) (- cop V))))
+        X (if (zero? (gmath/setzero (cmatrix/dot (- P V) (- cop V))))
             (do (println "chad")(pivot-axis- cop V P))
             (do (println "junkermeier")(cmatrix/cross (- P V) (- cop V))))]
     (concat mmol (rotate-mol submol V (+ V X) (- angle)))))
+
+
 
 
 
@@ -547,14 +564,14 @@ the sub mol will rotate closer."
   [mol atoms]
   (let [[a b c d] atoms
         f #(- (:coordinates (mol-nth mol %2)) (:coordinates (mol-nth mol %1)))]
-    (jmath/dihedral (f b a) (f b c) (f c d))))
+    (gmath/dihedral (f b a) (f b c) (f c d))))
 
 
 
 (defn mol-angle
   [mol atms]
   (let [[a P c] atms]
-        (jmath/three-point-angle (:coordinates (mol-nth mol a))
+        (gmath/three-point-angle (:coordinates (mol-nth mol a))
                     (:coordinates (mol-nth mol P))
                     (:coordinates (mol-nth mol c)))))
 
@@ -568,6 +585,7 @@ the sub mol will rotate closer."
          (:coordinates (mol-nth mol atm1))))
 
 
+
 (defn arrange-mol
    "This is used to rotate a mol such that the vector defined by (map - atm2 atm1)
    is parallel to the vector direction. It also places atm1 at the origin.
@@ -576,7 +594,7 @@ the sub mol will rotate closer."
    [mol atm1 atm2 direction]
    (shift-to
     (apply-coord-transform-matrix mol
-     (jmath/align-vectors (mol-vector mol atm2 atm1) direction)) atm1 [0 0 0]))
+     (gmath/align-vectors (mol-vector mol atm2 atm1) direction)) atm1 [0 0 0]))
 
 
 
@@ -665,6 +683,10 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
                     (assoc-in % [:name] (:name %))) mol)))
 
 
+(defn randomize-mol
+  [tgl sd mol]
+  (update-mol :coordinates #(gmath/rand-displacement tgl sd %) mol))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -675,12 +697,18 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
 
 
 ;(use 'greenwood.xyz)
+;(use 'greenwood.atomic-structure-output)
 ;(require '[clojure.core.reducers :as r])
 
-#_(def g (second (->> (foldable-chunks "/Users/chadjunkermeier/Desktop/graphene.xyz" [[0 77] [77 82]])
+#_(def g (->> (foldable-chunks "/Users/chadjunkermeier/Desktop/graphene.xyz" )
 (r/map (partial drop 2))
      (r/map xyz-iota->atoms)
-     (into []))))
+              (r/map #(randomize-mol :xy 0.1 %))
+     (into [])))
+
+
+;(spit "/Users/chadjunkermeier/Desktop/greenwood.xyz" (write-xyz (first g)))
+
 
 
 #_(->> g

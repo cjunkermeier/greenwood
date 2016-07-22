@@ -66,7 +66,16 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 	(basic/new-atom (.intern C2) (* 2/3 (+ (a-one a) (a-two a))) nil nil nil nil 1)]))
 
 
+#_(def ggggrr (graphene-primitive-unit-cell "C" "C" (* (sqrt 3) 1.4270038 )))
 
+
+#_(def b (gutils/transpose (map :coordinates (gmol/rotate-mol
+     (create-supercell (:mol ggggrr) (computation-projectors (:lvs ggggrr) 3 3 0))
+                   [0 0 0] [0 0 1] (ed/degrees->radians 30)))))
+
+#_(clojure.string/join ", " (last b))
+
+#_(clojure.string/join "\", \"" (take (count (last b)) (repeat "ATOM")))
 
 (defn QE-to-xyz
   "Used with my 2x2 Fgraphene paper."

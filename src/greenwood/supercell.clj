@@ -3,8 +3,8 @@
             [greenwood.contrib-math :as cmath]
             [greenwood.utils :as utils]
             [greenwood.math :as gmath]
-            [greenwood.mol :as jmdmol]
-            [greenwood.neighbors :as jmdngh]
+            [greenwood.mol :as gmol]
+            [greenwood.neighbors :as gngh]
             [greenwood.xyz :as xyz]
             [clojure.math.combinatorics :as combine]
             [clojure.string :as st])
@@ -24,7 +24,7 @@ system.
 mol is the vector of atoms
 lvs is the lattice vectors."
   [mol lvs]
-  (jmdmol/update-mol :coordinates #(mmul ((comp transpose inverse) lvs)  %) mol))
+  (gmol/update-mol :coordinates #(mmul ((comp transpose inverse) lvs)  %) mol))
 
 
 
@@ -35,7 +35,7 @@ coordiante system and transform them into the real space cartesian coordinate
 system.
 lvs are the lattice vectors of the primitive unit cell."
    [mol lvs]
-    (jmdmol/update-mol  :coordinates
+    (gmol/update-mol  :coordinates
             #(mmul (transpose lvs) %) mol))
 
 
@@ -129,7 +129,7 @@ for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
   [mol projectors]
-  (flatten (map #(jmdmol/shift % mol) projectors)))
+  (flatten (map #(gmol/shift % mol) projectors)))
 
 
 
@@ -143,7 +143,7 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3]
   (b/unitcell  [(* la1 (first lvs)) (* ma2 (second lvs)) (* na3 (last lvs))]
-             (xyz/atom-pos (flatten (map #(jmdmol/shift % mol) (cell-projectors lvs la1 ma2 na3))))))
+             (xyz/atom-pos (flatten (map #(gmol/shift % mol) (cell-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -156,7 +156,7 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3]
   (b/unitcell [(* (inc (* 2 la1)) (first lvs)) (* (inc (* 2 ma2)) (second lvs)) (* (inc (* 2 na3)) (last lvs))]
-            (flatten (map #(jmdmol/shift % mol) (computation-projectors lvs la1 ma2 na3)))))
+            (flatten (map #(gmol/shift % mol) (computation-projectors lvs la1 ma2 na3)))))
 
 
 
@@ -166,7 +166,7 @@ This also could be used to make a bigger supercell out of a supercell."
 (defn create-filtered-supercell
  "filters atoms out during the creation process, thus using less memory"
  [mol projectors f]
- (flatten (map (comp f #(jmdmol/shift % mol)) projectors)))
+ (flatten (map (comp f #(gmol/shift % mol)) projectors)))
 
 
 
@@ -181,7 +181,9 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3 f]
   (b/unitcell  [(* la1 (first lvs)) (* ma2 (second lvs)) (* na3 (last lvs))]
-             (flatten (map (comp f #(jmdmol/shift % mol)) (cell-projectors lvs la1 ma2 na3)))))
+             (flatten (map (comp f #(gmol/shift % mol)) (cell-projectors lvs la1 ma2 na3)))))
+
+
 
 
 
@@ -194,7 +196,7 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3 f]
   (b/unitcell [(* (inc (* 2 la1)) (first lvs)) (* (inc (* 2 ma2)) (second lvs)) (* (inc (* 2 na3)) (last lvs))]
-            (flatten (map (comp f #(jmdmol/shift % mol)) (computation-projectors lvs la1 ma2 na3)))))
+            (flatten (map (comp f #(gmol/shift % mol)) (computation-projectors lvs la1 ma2 na3)))))
 
 
 
@@ -231,6 +233,7 @@ Usage: (create-cartesian-supercell graphene 2.461 2.461 0 (/ Math/PI 2) (/ Math/
 
 
 
+
 (defn patchwork-supercell-helper-
   "This function is designed to do the work of breaking the patchwork supercell
 into it's component parts, and then delete the offending atoms from the portion
@@ -238,11 +241,12 @@ that the user said not to keep.
 
 keep-atoms-from is the string of either name-one or of name-two"
   [mol overlap keep-atoms-from]
-  (let [definitely-keep (jmdmol/mol-filter :name #{keep-atoms-from} mol)
-        possibly-keep (jmdmol/mol-filter-not :name #{keep-atoms-from} mol)
+  (let [definitely-keep (gmol/mol-filter :name #{keep-atoms-from} mol)
+        possibly-keep (gmol/mol-filter-not :name #{keep-atoms-from} mol)
         flattened (flatten (map vec overlap))]
     (concat definitely-keep
       (filter (fn [x](not (eval (concat '[or] (map  #(= (:pos x) %) flattened)))))  possibly-keep))))
+
 
 
 
@@ -259,11 +263,11 @@ Usage: (patchwork-supercell supercell-graphene supercell-CF #(and (< 10 (first %
   ([mol-1 mol-2 rules keep-atoms-from]
 (let [name-one (str "name-one-" (rand))
       name-two (str "name-two-" (rand))
-      quilt-1 (future (jmdmol/update-mol-name (jmdmol/mol-filter-not :coordinates rules mol-1) map? name-one))
-      quilt-2 (future (jmdmol/update-mol-name (jmdmol/mol-filter :coordinates rules mol-2) map? name-two))
+      quilt-1 (future (gmol/update-mol-name (gmol/mol-filter-not :coordinates rules mol-1) map? name-one))
+      quilt-2 (future (gmol/update-mol-name (gmol/mol-filter :coordinates rules mol-2) map? name-two))
       atoms (concat @quilt-1 @quilt-2)
-      overlap (jmdngh/overlapping-atoms atoms 0.08)]
-    (jmdmol/update-mol-name (cond
+      overlap (gngh/overlapping-atoms atoms 0.08)]
+    (gmol/update-mol-name (cond
       (and (= keep-atoms-from 1) (set? (first overlap)))
          (xyz/atom-pos (patchwork-supercell-helper- atoms overlap name-one))
       (and (= keep-atoms-from 2) (set? (first overlap)))
@@ -310,8 +314,8 @@ Usage: (drop-symmetry-redundant-points [[0.5 0.5 0.5] [0.75 0.75 0.75] [1.5 1.5 
   Usage: (drop-overlapping-sc-atoms (:mol rolled) (:lvs rolled) 0 1 0)"
   [mol lvs nx ny nz]
   (let [proatoms (create-supercell mol (computation-projectors lvs nx ny nz))
-        overlap (map second (jmdngh/overlapping-atoms proatoms 0.4))]
-    (jmdmol/mol-filter-not-vec :pos overlap mol)))
+        overlap (map second (gngh/overlapping-atoms proatoms 0.4))]
+    (gmol/mol-filter-not-vec :pos overlap mol)))
 
 
 
@@ -368,11 +372,12 @@ Usage:  "
                   (gmath/tolerated-gte (last %) zz epsilon)
                   (gmath/tolerated-lt (last %) zzz epsilon))]
       ((comp
-         #(jmdmol/mol-filter {:coordinates box?} %)
-         #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
-         #(jmdmol/update-mol  :coordinates f %)
-         #(jmdmol/shift (* -1 origin) %))
+         #(gmol/mol-filter {:coordinates box?} %)
+         #(gmol/rotate-mol % [0 0 0] [0 0 1] alpha)
+         #(gmol/update-mol  :coordinates f %)
+         #(gmol/shift (* -1 origin) %))
         (create-supercell atoms projectors)))))
+
 
 
 
@@ -429,10 +434,10 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
                   (gmath/tolerated-lt (last %) zzz epsilon))]
       (b/unitcell [[x 0.0 0.0] [0.0 y 0.0] [0.0 0.0 z]]
       ((comp
-         #(jmdmol/mol-filter {:coordinates box?} %)
-         #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
-         #(jmdmol/update-mol :coordinates f %)
-         #(jmdmol/shift (* -1 cart-origin) %)
+         #(gmol/mol-filter {:coordinates box?} %)
+         #(gmol/rotate-mol % [0 0 0] [0 0 1] alpha)
+         #(gmol/update-mol :coordinates f %)
+         #(gmol/shift (* -1 cart-origin) %)
          #(fractional->cartesian % lvs))
         (create-supercell atoms projectors))))))
 
@@ -461,6 +466,7 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
 
 
 
+
 (defn within-cell?
   "This determines if point lies within the parallelepiped defined by cell.
   cell is the output of define-cell.  This only really works for cubic cells."
@@ -469,12 +475,13 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
         n (- point (second cell))
         p? (partial <= 0 )
         n? (partial >= 0 )]
-    (and (p? (gmath/dot-product m (nth cell 2)))
-         (p? (gmath/dot-product m (nth cell 3)))
-         (p? (gmath/dot-product m (nth cell 4)))
-         (n? (gmath/dot-product n (nth cell 2)))
-         (n? (gmath/dot-product n (nth cell 3)))
-         (n? (gmath/dot-product n (nth cell 4))))))
+    (and (p? (dot m (nth cell 2)))
+         (p? (dot m (nth cell 3)))
+         (p? (dot m (nth cell 4)))
+         (n? (dot n (nth cell 2)))
+         (n? (dot n (nth cell 3)))
+         (n? (dot n (nth cell 4))))))
+
 
 
 
@@ -557,28 +564,28 @@ Usage: (create-surface-cartesiann graphene [0 0 0] 50 50 1
                   (gmath/tolerated-lt (last %) zzz epsilon))]
         (create-filtered-supercell atoms projectors
                           (comp
-         (partial jmdmol/mol-filter {:coordinates box?})
-         #(jmdmol/rotate-mol % [0 0 0] [0 0 1] alpha)
-         #(jmdmol/update-mol :coordinates f %)
-         #(jmdmol/shift (* -1 cart-origin) %)
+         (partial gmol/mol-filter {:coordinates box?})
+         #(gmol/rotate-mol % [0 0 0] [0 0 1] alpha)
+         #(gmol/update-mol :coordinates f %)
+         #(gmol/shift (* -1 cart-origin) %)
          #(fractional->cartesian % lvs))))))
 
 
 
 (defn shift->scell
-  "This will automatically jmdmol/shift the mol so that it will fit inside the surface
+  "This will automatically gmol/shift the mol so that it will fit inside the surface
 unit cell that GULP uses, assuming, of course, that the user gave GULP the correct
 lattice parameters for mol."
   [cell-x-size cell-y-size mol]
-  (let [extrema (jmdmol/min-max-coordinates mol)
+  (let [extrema (gmol/min-max-coordinates mol)
         mol-size (map #(Math/abs (reduce - %)) (partition 2 extrema))
         x-shift (- cell-x-size (first mol-size))
         y-shift (- cell-y-size (second mol-size))]
     (if (or (neg? x-shift) (neg? y-shift))
        (throw (Exception. "The mol's size is larger than cell-x/y-size."))
     ((comp
-    #(jmdmol/shift (* -1 [(first extrema) (nth extrema 2) 0]) %)
-      #(jmdmol/shift [(/ x-shift 2) (/ y-shift 2) 0] %))
+    #(gmol/shift (* -1 [(first extrema) (nth extrema 2) 0]) %)
+      #(gmol/shift [(/ x-shift 2) (/ y-shift 2) 0] %))
       mol))))
 
 
@@ -599,6 +606,7 @@ lattice parameters for mol."
         t (apply * (take (apply max (map f (flatten [a b more]))) (repeat 10)))
         abc (map (comp int (partial * t)) (flatten [a b more]))]
     (map #(/ (apply cmath/lcm abc)  %) abc))))
+
 
 
 

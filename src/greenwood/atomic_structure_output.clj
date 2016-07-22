@@ -4,6 +4,7 @@
    [clojure.string :as strng]
    [greenwood.empirical-data :as empdata]
    [greenwood.mol :as jmol]
+   [greenwood.xyz :as xyz]
    [greenwood.math :as jmath]
    [clojure.pprint :as pp]
    [greenwood.utils :as utils]))
@@ -260,26 +261,26 @@ lattice type symbol used is H."
                  (str "HEADER" utils/endline
                   "AUTHOR    GENERATED IN JMD" utils/endline
                  (write-pdb-lat lat-param space-group)
-                 (write-pdb-HETATM mol)
+                 (write-pdb-HETATM (xyz/atom-pos mol))
                  "END")
     (str "HEADER" utils/endline
       "AUTHOR    GENERATED IN JMD" utils/endline
       (write-pdb-lat lat-param space-group)
-      (write-pdb-HETATM mol)
-      (write-pdb-connect mol)
+      (write-pdb-HETATM (xyz/atom-pos mol))
+      (write-pdb-connect (xyz/atom-pos mol))
       "END")))
   ([mol]
     (if (nil? ((comp :neigh first) mol))
                  (str "HEADER" utils/endline
                   "AUTHOR    GENERATED IN GRNWD"
                       utils/endline
-                 (write-pdb-HETATM mol)
+                 (write-pdb-HETATM (xyz/atom-pos mol))
                  "END")
     (str "HEADER" utils/endline
       "AUTHOR    GENERATED IN GRNWD"
          utils/endline
-      (write-pdb-HETATM mol)
-      (write-pdb-connect mol)
+      (write-pdb-HETATM (xyz/atom-pos mol))
+      (write-pdb-connect (xyz/atom-pos mol))
       "END"))))
 
 

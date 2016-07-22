@@ -1,6 +1,8 @@
  (ns greenwood.math
   (:require ;[clojure.core.reducers :as r]
             [greenwood.contrib-math :as cm]
+            [clojure.core.matrix.stats :as cms]
+            [clojure.core.matrix.random :as cmr]
             ;[clojure.set :as cset]
    )
   (:refer-clojure :exclude [* - + == /])
@@ -44,10 +46,11 @@
 
 
 
-#_(defn magnitude
+(defn magnitude
   "Calculates the sqrt of the sum of the squares of coords"
-  ^double [coords]
+  [coords]
   (length coords))
+
 
 
 (defn unit-vec [vect]
@@ -78,13 +81,6 @@
   (/ (reduce + 0.0 v) (count v)))
 
 
-(defn median
-  "computes the median value of a col"
-  [v]
-  (let [c (/ (count v) 2)]
-  (if (integer? c)
-    ((comp average (partial take 2) (partial drop (dec (floor c))) sort) v))
-    ((comp first (partial drop (dec c)) sort) v)))
 
 
 
@@ -93,7 +89,7 @@
   [v]
   (let [c (/ (count v) 2)]
   (if (integer? c)
-    ((comp average (partial take 2) (partial drop (dec (floor c))) sort) v)
+    ((comp cms/mean (partial take 2) (partial drop (dec (floor c))) sort) v)
     ((comp first (partial drop (dec c)) sort) v))))
 
 
@@ -106,14 +102,13 @@
 
 
 (defn sum-sqrs [v]
-  (reduce + 0.0 (* v v)))
+  (cms/sum-of-squares v))
 
 (defn p-sd
 "Computes the population standard deviation of a vector of values.
   If you collect data from all members of a population or set, you apply the population standard deviation."
   [v]
-  (let [mean (average v)]
- (sqrt (/ (sum-sqrs (- v mean)) (count v)))))
+ (sqrt (/ (sum-sqrs (- v (cms/mean v))) (count v))))
 
 
 (defn s-sd
@@ -122,16 +117,15 @@
   [v]
   (if (== (- (apply max (map - v))) (apply min v))
     0
-  (let [mean (average v)]
- (sqrt (/ (sum-sqrs (- v mean)) (dec (count v)))))))
+  (cms/sd v)))
 
 
 (defn simple-stats
 "Computes the mean, median, standard deviation, and upper and lower quartiles a seq of values.  Outputs the a hash-map."
  [v]
   (if (== (- (apply max (map - v))) (apply min v))
-    (hash-map :upper nil :lower nil :median (median v) :mean (average v) :var 0)
-    (assoc (quantiles v) :mean (average v) :var (sum-sqrs [(s-sd v)]))))
+    (hash-map :upper nil :lower nil :median (median v) :mean (cms/mean v) :var 0)
+    (assoc (quantiles v) :mean (cms/mean v) :var (cms/variance v))))
 
 
 
@@ -266,16 +260,15 @@ Usage: (tolerance? 2 1.0E-8) => false
   ([^double real-num]
   (-> real-num
     (* 1E6M)
-    (cm/round )
+    (round )
     (* 1E-6M)
     (double )))
   ([^double val ^double real-num ]
   (-> real-num
     (/ val)
-    (cm/round )
+    (round )
     (* (bigdec val))
     (double ))))
-
 
 
 
@@ -629,6 +622,25 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
   Useage: (rand-point)"
    []
   (take 3 (repeatedly rand)))
+
+
+
+(defn rand-displacement
+  "Displaces a point, pnt, by a random amount where that amount is drawn
+  from a normal distribution with a standard deviation of sd.
+
+  Usage: (rand-displacement :xy 0.1 [1 0 0]) => (1.0498892020635808 -0.11030772423707187 0)
+  Usage: (rand-displacement :xyz 0.1 [1 0 0]) => (1.0056703785638446 -0.0034408339313103174 0.002919629292373202)"
+  [tgl sd pnt]
+  (cond
+    (= tgl :xyz) (the-rotation-function (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (rand-point-fractional) (rand tau))
+    (= tgl :xy) (the-rotation-function (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (+ pnt [0.0 0.0 1.0]) (rand tau))
+    (= tgl :z) (+ pnt (abs [0.0 0.0 (* (first (cmr/sample-normal 1)) sd)]))
+    (= tgl :x) (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0]))
+    (= tgl :y) (+ pnt (abs [0.0 (* (first (cmr/sample-normal 1)) sd)  0.0]))))
+
+
+
 
 (defn intersecting-spheres?
   "Determines if a sphere of radius r1 intersections a sphere or radius 2

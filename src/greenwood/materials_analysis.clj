@@ -52,6 +52,9 @@ of the volume and energy vectors in the call of this function."
 
 
 
+
+
+
 #_(defn Birch-Murnaghan-cohesive-properties [vol-col en-col]
   "This is used to compute the cohesive properties of a material using the
 Birch-Murnaghan equation. The input is a col of lattice volumes (lattice constants),

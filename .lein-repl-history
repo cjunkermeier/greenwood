@@ -1,179 +1,3 @@
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(def DCAH (gn/neighbors (gxyz/xyz-str->atoms "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579") 0.2 1.4))
-DCAH
-exit
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(def DCAH (gn/neighbors (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579") 0.2 1.4))
-exit
-(use 'greenwood.xyz)
-(xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579")
-exit
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(def DCAH (gn/neighbors (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579") 0.2 1.4))
-DCAH
-(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491")))
-(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579"))
-DCAH
-(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
-HNO3
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-gas-phase-single-component-DCAH
-(* (count DCAH) 35)
-(count gso/gas-phase-single-component-DCAH)
-(count gas-phase-single-component-DCAH)
-(count DCAH)
-(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
-(def v 25.1)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-exit
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579"))
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-exit
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(require '[random-seed.core :refer :all])
-  (:refer-clojure :exclude [rand rand-int rand-nth])
-(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579"))
-(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
-(defn write-BIOGRF
-"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
-[mol v name]
-(join "\n"
-["XTLGRF 200"
-(str "DESCRP" name)
-(write-crystx v v v 90.00 90.00 90.00)
-(write-reac-HETATM mol)
-"END"]))
-(defn write-BIOGRF
-"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
-[mol v name]
-(cstr/join "\n"
-["XTLGRF 200"
-(str "DESCRP" name)
-(write-crystx v v v 90.00 90.00 90.00)
-(write-reac-HETATM mol)
-"END"]))
-(defn write-BIOGRF
-"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
-[mol v name]
-(cstr/join "\n"
-["XTLGRF 200"
-(str "DESCRP" name)
-(reaxff/write-crystx v v v 90.00 90.00 90.00)
-(reaxff/write-reac-HETATM mol)
-"END"]))
-(set-random-seed! 888)
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(set-random-seed! 8)
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(set-random-seed! 81)
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(set-random-seed! 81)
-(def v 25.0)
-(def lvs [[v 0 0] [0 v 0] [0 0 v]])
-;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-(set-random-seed! 81)
-(def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
-exit
-(require 'reaxff)
-(require '[greenwood.solution :as gsol])
-(require '[greenwood.xyz :as gxyz])
-(require '[clojure.string :as cstr])
-(require '[greenwood.utils :as gutils])
-(require '[greenwood.empirical-data :as ged])
-(require '[greenwood.neighbors :as gn])
-(require '[random-seed.core :refer :all])
-  (:refer-clojure :exclude [rand rand-int rand-nth])
-(def DCAH (gxyz/xyz-str->atoms-readable "N   12.32170  13.00473  11.78595 
-C   13.29902  13.45354  12.74665
-N   14.10215  13.81901  13.53892
-C   11.73234  11.80858  12.05561
-N   11.18361  10.64494  12.34951
-H   10.63120   9.81316  12.43579"))
-(def HNO3 (gn/neighbors (gxyz/xyz-str->atoms "N   12.62196  12.50000  12.55043\nO   12.67402  12.50000  13.77865\nO   13.66113  12.50000  11.88123\nO   11.36737  12.50000  11.94446\nH   10.43778  12.50000  12.24491") 0.2 1.4))
-(defn write-BIOGRF
-"This function is used to write out a BIOGRF record that can be used inside a ReaxFF geo file."
-[mol v name]
-(cstr/join "\n"
 ["XTLGRF 200"
 (str "DESCRP" name)
 (reaxff/write-crystx v v v 90.00 90.00 90.00)
@@ -453,4 +277,224 @@ H   10.63120   9.81316  12.43579"))
 ;(gsol/sol-density lvs [] (vector (take 35 (repeat DCAH))))
 (def gas-phase-single-component-DCAH (gsol/solution [] lvs [0 0 0] 35 DCAH))
 (spit "/Users/chadjunkermeier/Desktop/gas-phase-single-component-DCAH.xyz" (gout/write-xyz gas-phase-single-component-DCAH))
+exit
+(require '[greenwood.xyz :as xyz] '[greenwood.atomic-structure-output :as out])
+(require '[greenwood.mol :as gmol]'[greenwood.math :as gmath])
+(require '[greenwood.supercell :as gsc]'[greenwood.empirical-data :as ed])
+(require '[graphitic :as g])
+(require '[clojure.string :as cstr])
+(require '[greenwood.basics :as b])
+(require '[greenwood.neighbors :as gneigh])
+(use 'ultra-csv.core)
+(defn make-system-angstrom
+  "If you have a system where the atoms are in units of angstroms and have the lattice vectors
+  
+  When using this the input lvs should be a vector of vectors, i.e. [[10 0 0][0 10 0][0 0 10]]."
+ [mol lvs]
+ (b/unitcell mol lvs))
+(defn make-system-QE-crystal
+ "This function is designed for working with the quantum espresso settings that I used in the fluorinated/hydrogenated graphene and graphene oxide systems, and only those systems."
+  [mol lattice-constant]
+  (b/unitcell (g/QE-to-xyz (xyz/xyz-str->atoms mol) lattice-constant 2) (g/QE-to-lvs lattice-constant 2)))
+  
+(defn structure-characteristics
+  "This function, creates a supercell of the system, which allows us to easily compute the bond lengths and angles between all atoms in the quantum espresso cell. It then computes the C-C bond lengths and C-C-C angles, then computes the statistical measures of each.
+  
+  Input: sys - hash-map of atomic positions and lattice vectors
+  Input: adsorb-species - atomic species of the adsorbate
+  Input: name - the name of a system
+  
+  Usage: (structure-characteristics O0156 LVSO0156  'O' 'C4O')"
+[sys adsorb-species name]
+(let [CC (gmol/mol-filter {:species "C"} (:mol sys))
+      CC-sc (as-> (gsc/create-supercell CC (gsc/computation-projectors (:lvs sys) 1 1 0)) x
+                  (xyz/atom-pos x)
+                  (gneigh/neighbors x 0.2 1.9))
+     A (as-> (gneigh/angles CC-sc) x
+             (take 8 x)
+             (map (comp  #(map :radians %) :angles) x)
+             (flatten x)
+             (map ed/radians->degrees x)
+             (gmath/simple-stats x))
+     B (as-> CC-sc x
+             (take 8 x)
+      (map :ndistance %) :neigh) x)
+             (flatten x)
+             (gmath/simple-stats x))
+     CFB (as-> (:mol sys) x
+             (gsc/create-supercell x (gsc/computation-projectors (:lvs sys) 1 1 0))
+             (xyz/atom-pos x)
+             (gneigh/neighbors x 0.2 1.9)
+             (take (count (:mol sys)) x)
+             (gmol/mol-filter {:species  adsorb-species} x)
+             (map (comp #(map :ndistance %) :neigh) x)
+             (flatten x)
+             (gmath/simple-stats x))]
+    (hash-map :b-mean (:mean B) :b-var (:var B) :a-mean (:mean A) :a-var (:var A) :Ab-mean (:mean CFB) :Ab-var (:var CFB) :name name )))
+(require '[greenwood.xyz :as xyz] '[greenwood.atomic-structure-output :as out])
+(require '[greenwood.mol :as gmol]'[greenwood.math :as gmath])
+(require '[greenwood.supercell :as gsc]'[greenwood.empirical-data :as ed])
+(require '[graphitic :as g])
+(require '[clojure.string :as cstr])
+(require '[greenwood.basics :as b])
+(require '[greenwood.neighbors :as gneigh])
+(defn make-system-angstrom
+  "If you have a system where the atoms are in units of angstroms and have the lattice vectors
+  
+  When using this the input lvs should be a vector of vectors, i.e. [[10 0 0][0 10 0][0 0 10]]."
+ [mol lvs]
+ (b/unitcell mol lvs))
+(defn make-system-QE-crystal
+ "This function is designed for working with the quantum espresso settings that I used in the fluorinated/hydrogenated graphene and graphene oxide systems, and only those systems."
+  [mol lattice-constant]
+  (b/unitcell (g/QE-to-xyz (xyz/xyz-str->atoms mol) lattice-constant 2) (g/QE-to-lvs lattice-constant 2)))
+(defn structure-characteristics
+  "This function, creates a supercell of the system, which allows us to easily compute the bond lengths and angles between all atoms in the quantum espresso cell. It then computes the C-C bond lengths and C-C-C angles, then computes the statistical measures of each.
+  
+  Input: sys - hash-map of atomic positions and lattice vectors
+  Input: adsorb-species - atomic species of the adsorbate
+  Input: name - the name of a system
+  
+  Usage: (structure-characteristics O0156 LVSO0156  'O' 'C4O')"
+[sys adsorb-species name]
+(let [CC (gmol/mol-filter {:species "C"} (:mol sys))
+      CC-sc (as-> (gsc/create-supercell CC (gsc/computation-projectors (:lvs sys) 1 1 0)) x
+                  (xyz/atom-pos x)
+                  (gneigh/neighbors x 0.2 1.9))
+     A (as-> (gneigh/angles CC-sc) x
+             (take 8 x)
+             (map (comp  #(map :radians %) :angles) x)
+             (flatten x)
+             (map ed/radians->degrees x)
+             (gmath/simple-stats x))
+     B (as-> CC-sc x
+             (take 8 x)
+             (map (comp  #(map :ndistance %) :neigh) x)
+             (flatten x)
+             (gmath/simple-stats x))
+     CFB (as-> (:mol sys) x
+             (gsc/create-supercell x (gsc/computation-projectors (:lvs sys) 1 1 0))
+             (xyz/atom-pos x)
+             (gneigh/neighbors x 0.2 1.9)
+             (take (count (:mol sys)) x)
+             (gmol/mol-filter {:species  adsorb-species} x)
+             (map (comp #(map :ndistance %) :neigh) x)
+             (flatten x)
+             (gmath/simple-stats x))]
+    (hash-map :b-mean (:mean B) :b-var (:var B) :a-mean (:mean A) :a-var (:var A) :Ab-mean (:mean CFB) :Ab-var (:var CFB) :name name )))
+(def O01  "C       -0.003253805  -0.006507609   0.001654828
+C        0.169920475   0.339840949   0.001654828
+C       -0.001143420   0.505555687  -0.006830942
+C        0.167810090   0.827777613  -0.006830942
+C        0.499717851  -0.000564297  -0.006154910
+C        0.666948849   0.333897637  -0.006154910
+C        0.506699107   0.505555687  -0.006830942
+C        0.659967593   0.827777613  -0.006830942
+O        0.083333336   0.166666670   0.053287931”)
+(def LO01  4.707327643463539 )
+(def O01-sys (make-system-QE-crystal O01 LO01))
+(structure-characteristics O01-sys  "O" "C8O" )
+)
+(def O01  "C       -0.003253805  -0.006507609   0.001654828
+C        0.169920475   0.339840949   0.001654828
+C       -0.001143420   0.505555687  -0.006830942
+C        0.167810090   0.827777613  -0.006830942
+C        0.499717851  -0.000564297  -0.006154910
+C        0.666948849   0.333897637  -0.006154910
+C        0.506699107   0.505555687  -0.006830942
+C        0.659967593   0.827777613  -0.006830942
+O        0.083333336   0.166666670   0.053287931”)
+O01
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931”]))
+(require '[greenwood.utils:as utils])
+(require ‘[greenwood.utils :as utils])
+(require `[greenwood.utils :as utils])
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931”])) 
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931"]))
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+ "C        0.169920475   0.339840949   0.001654828"
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+"C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931"]))
+(require `[greenwood.utils :as utils])
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+"C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931"]))
+(use 'greenwood.utils)
+(def O01  (cstr/join utils/endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+"C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931"]))
+(def O01  (cstr/join endline ["C       -0.003253805  -0.006507609   0.001654828"
+"C        0.169920475   0.339840949   0.001654828"
+"C       -0.001143420   0.505555687  -0.006830942"
+"C        0.167810090   0.827777613  -0.006830942"
+"C        0.499717851  -0.000564297  -0.006154910"
+"C        0.666948849   0.333897637  -0.006154910"
+"C        0.506699107   0.505555687  -0.006830942"
+"C        0.659967593   0.827777613  -0.006830942"
+"O        0.083333336   0.166666670   0.053287931"]))
+(def O0156  (cstr/join endline ["C       -0.254401546   0.022547284   0.108844028"
+"C       -0.260926949   1.516478919   0.171726161"
+"C       -1.491485041   2.293528856  -0.105591276"
+"C       -1.488512667   3.664016307  -0.087657716"
+"C        2.326512811   0.017588004  -0.087713126"
+"C        2.329702658   1.515106928   0.110519593"
+"C        1.038975810   2.267008799   0.171668542"
+"C        0.981729413   3.721074875  -0.107729143"
+"O       -0.368550057   0.725977023   1.392262084"
+"O        1.776858648   1.967865286   1.392981794"])) 
+(def LO01  4.707327643463539 ); lattice constant in Bohr units 
+(def O01-sys (make-system-QE-crystal O01 LO01))
+(structure-characteristics O01-sys  "O" "C8O" )
+exit
+(use 'test)
+(use 'test :reload)
+exit
+(use 'test :reload)
+(use 'test )
+(use 'test :reload)
+exit
+(use 'test :reload)
 exit
