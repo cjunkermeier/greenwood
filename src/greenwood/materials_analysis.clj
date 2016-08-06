@@ -34,7 +34,7 @@ Bnot_prime = unitless"
       (inccore/div (inccore/mult Bnot Vnot)(inccore/minus 1 Bnot-prime)))))
 
 
-(defn Birch-Murnaghan-cohesive-properties [vol-col en-col]
+(defn Birch-Murnaghan-EOS [vol-col en-col]
   "This is used to compute the cohesive properties of a material using the
 Birch-Murnaghan equation. The input is a col of lattice volumes (lattice constants),
 vol-col, for the material along with the total energy, en-col, associated with
@@ -48,76 +48,29 @@ of the volume and energy vectors in the call of this function."
   (let [min-en (apply min en-col)
         where (first (gutil/positions #(= min-en %) en-col))
         min-lat (nth vol-col where)]
-    (:coefs(incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat 4 2]))))
+   (#(hash-map :Enot (first (:coefs %)) :Vnot (second (:coefs %))
+               :Bnot (nth (:coefs %) 2) :Bnot-prime (nth (:coefs %) 3)
+               :rss (:rss %))
+     (incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat 4 2]))))
 
 
 
 
 
-
-#_(defn Birch-Murnaghan-cohesive-properties [vol-col en-col]
-  "This is used to compute the cohesive properties of a material using the
-Birch-Murnaghan equation. The input is a col of lattice volumes (lattice constants),
-vol-col, for the material along with the total energy, en-col, associated with
-vol-col.  The output is a col containing, in order, the equilibrium total energy,
-equilibrium lattice volume, bulk modulus, and the derivative of the bulk modulus
-with respect to pressure.  This can be used with just a col of lattice constants
-in place of lattice volumes, but you will no longer obtain the bulk modulus.
-
-If the output ends up being (NaN NaN NaN NaN) you could have exchanged the positioning
-of the volume and energy vectors in the call of this function."
-  (let [min-en (apply min en-col)
-        where (first (gutil/positions #(= min-en %) en-col))
-        min-lat (nth vol-col where)]
-    (:coefs(incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat 11 4] :newton-raphson true))))
-
-
-
-(defn graphene-resonator-frequency
-  "This computes the frequency of a graphene resonator with a gate voltage of zero.
-The form for this equation comes from Nature Nanotechnology 4, 861 - 867 (2009),
-http://www.nature.com/nnano/journal/v4/n12/full/nnano.2009.267.html.
-This needs the mol and lvs to determine the mass density.  In this we will
-actually calculate the f/f-ref, where L,w,To are respectively equal to L-ref,
-w-ref, To-ref, and Te = 0."
-  [mol-ref lvs-ref mol lvs]
-  (let [mass  #(reduce + (map (comp ged/atomic-mass ged/atomic-numbers :species) %))]
-    (sqrt (/
-      (/ (mass mol-ref) (gmath/lvs-volume lvs-ref))
-      (/ (mass mol) (gmath/lvs-volume lvs))))))
+(defn polynomial-eqn
+"A simple polynomial equation."
+  [theta v]
+  (let [[v0 c0 c1 c2 c3 c4] theta]
+              (inccore/plus c0
+              (inccore/mult c1 (- v v0))
+              (inccore/mult c2 (- v v0) (- v v0))
+              (inccore/mult c3 (- v v0) (- v v0) (- v v0))
+              (inccore/mult c4 (- v v0) (- v v0) (- v v0) (- v v0)))))
 
 
 
 
-
-
-
-(defn find-band-gap
-  "Used with quantum espresso"
-  [bands fermienergy]
-  (let [above-below (multi-filter [#(> % fermienergy) #(< % fermienergy)] (flatten bands))]
-    (- (apply min (first above-below)) (apply max (second above-below)))))
-
-
-
-
-
-; Third order Birch-M. EOS http://en.wikipedia.org/wiki/Birch–Murnaghan_equation_of_state
-;http://gilgamesh.cheme.cmu.edu/doc/software/jacapo/appendices/appendix-eos.html
-;https://wiki.fysik.dtu.dk/ase/ase/utils.html
-#_(defmacro polynomial-eqn
-"it is assumed that t is the wines root of the volume of the cell."
-  [theta t]
-  (let [[c0 c1 c2 c3 c4 c5 c6 t] theta]
-(inccore/plus c0 (inccore/mult c1 t) (inccore/mult c2 t t)
-   (inccore/mult c3 t t t)
-    (inccore/mult c4 t t t t)
-    (inccore/mult c5 t t t t t)
-    (inccore/mult c6 t t t t t))))
-
-
-
-#_(defn polynomial-cohesive-properties [vol-col en-col]
+(defn polynomial-EOS [vol-col en-col]
   "This is used to compute the cohesive properties of a material using a
 polynomial equation. The input is a col of lattice volumes (lattice constants),
 vol-col, for the material along with the total energy, en-col, associated with
@@ -128,10 +81,29 @@ in place of lattice volumes, but you will no longer obtain the bulk modulus.
 
 If the output ends up being (NaN NaN NaN NaN) you could have exchanged the potitioning
 of the volume and energy vectors in the call of this function."
-  (let [min-en (apply min en-col)
+   [vol-col en-col]
+    (let [min-en (apply min en-col)
         where (first (gutil/positions #(= min-en %) en-col))
-        min-lat (nth vol-col where)]
-    (:coefs(incopt/non-linear-model polynomial-eqn en-col vol-col [min-en min-lat 4 2]))))
+        min-v (nth vol-col where)]
+    (#(hash-map :Enot (second (:coefs %)) :Vnot (first (:coefs %))
+               :rss (:rss %))
+     (incopt/non-linear-model polynomial-eqn en-col vol-col [min-v min-en 0.00001 1.0 1 1]))))
+
+
+
+(defn young-modulus
+  "This formulation is taken from the paper:
+  'Equilibrium configuration and continuum elastic properties of finite sized graphene'
+  by C D Reddy, S Rajendran, and K M Liew.  Appearing in Nanotechnology 17 (2006) 864–870
+  (http://iopscience.iop.org/0957-4484/17/3/042).
+  Specifically, we use equations 7 and 11 from this paper."
+   [volumes energies]
+    (let [min-en (apply min energies)
+        where (first (gutil/positions #(= min-en %) energies))
+        min-v (nth volumes where)
+        model (incopt/non-linear-model polynomial-eqn energies volumes [min-v min-en 0.00001 1.0 1 1])]
+      (hash-map :ym (/(nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) )))
+
 
 
 
@@ -187,6 +159,12 @@ of the volume and energy vectors in the call of this function."
   can analyze the progression of the lindemann index over the course of the calculation."
   [timesteps n m]
   (map (comp #(/ (reduce + %) (count %)) local-lindemann-index) (partition n m timesteps)))
+
+
+
+
+
+
 
 
 

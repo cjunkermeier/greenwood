@@ -1392,5 +1392,21 @@ all three layers have the same a lattice constant."
 
 
 
+(defn graphene-resonator-frequency
+  "This computes the frequency of a graphene resonator with a gate voltage of zero.
+The form for this equation comes from Nature Nanotechnology 4, 861 - 867 (2009),
+http://www.nature.com/nnano/journal/v4/n12/full/nnano.2009.267.html.
+This needs the mol and lvs to determine the mass density.  In this we will
+actually calculate the f/f-ref, where L,w,To are respectively equal to L-ref,
+w-ref, To-ref, and Te = 0."
+  [mol-ref lvs-ref mol lvs]
+  (let [mass  #(reduce + (map (comp ed/atomic-mass ed/atomic-numbers :species) %))]
+    (sqrt (/
+      (/ (mass mol-ref) (gmath/lvs-volume lvs-ref))
+      (/ (mass mol) (gmath/lvs-volume lvs))))))
+
+
+
+
 
 
