@@ -263,8 +263,8 @@ Usage: (patchwork-supercell supercell-graphene supercell-CF #(and (< 10 (first %
   ([mol-1 mol-2 rules keep-atoms-from]
 (let [name-one (str "name-one-" (rand))
       name-two (str "name-two-" (rand))
-      quilt-1 (future (gmol/update-mol-name (gmol/mol-filter-not :coordinates rules mol-1) map? name-one))
-      quilt-2 (future (gmol/update-mol-name (gmol/mol-filter :coordinates rules mol-2) map? name-two))
+      quilt-1 (future (gmol/update-mol-name (gmol/mol-filter-not {:coordinates rules} mol-1) map? name-one))
+      quilt-2 (future (gmol/update-mol-name (gmol/mol-filter {:coordinates rules} mol-2) map? name-two))
       atoms (concat @quilt-1 @quilt-2)
       overlap (gngh/overlapping-atoms atoms 0.08)]
     (gmol/update-mol-name (cond
@@ -371,12 +371,13 @@ Usage:  "
                   (gmath/tolerated-lt (second %) yyy epsilon)
                   (gmath/tolerated-gte (last %) zz epsilon)
                   (gmath/tolerated-lt (last %) zzz epsilon))]
+      (b/unitcell [[x 0.0 0.0] [0.0 y 0.0] [0.0 0.0 z]]
       ((comp
          #(gmol/mol-filter {:coordinates box?} %)
          #(gmol/rotate-mol % [0 0 0] [0 0 1] alpha)
          #(gmol/update-mol  :coordinates f %)
          #(gmol/shift (* -1 origin) %))
-        (create-supercell atoms projectors)))))
+        (create-supercell atoms projectors))))))
 
 
 

@@ -12,7 +12,7 @@
 (require '[clojure.java.io :as io])
 
 (:refer-clojure :exclude [* - + == /])
-(use 'clojure.core.matrix)
+(require '[clojure.core.matrix :as cmat])
 (use 'clojure.core.matrix.operators)
 (use 'greenwood.basics :reload)
 (require '[me.raynes.fs :as fs])
@@ -94,7 +94,7 @@
   [mol]
     (->> (mol-filter {:species "C"}  mol)
          (map :charge )
-         (map abs)
+         (map cmat/abs)
          (reduce +  0.0 )))
 
 
@@ -128,6 +128,7 @@
       (cond
         (every? #(>  % 4.0) (d ff)) (:pos ff)
         :else (recur (first ffmol) (rest ffmol))))))
+
 
 
 
@@ -169,7 +170,7 @@
 (defn get-desorption-data
   "This will output a file with the set of maps."
    [NNN]
-     (map #(append-file (str % "/DESORPTION.dat") (str (within-N %) "\n"))  NNN))
+     (map #(utils/append-file (str % "/DESORPTION.dat") (str (within-N %) "\n"))  NNN))
 
 
 
@@ -332,7 +333,7 @@
      (into []))
 
 
-(def g (hash-map :desorption 1519300, :system "all300MPa", :F 662, :strain 29941.37983999998, :N "N2", :rearrange 1212950))
+;(def g (hash-map :desorption 1519300, :system "all300MPa", :F 662, :strain 29941.37983999998, :N "N2", :rearrange 1212950))
 
 (defn parse-energy-log
   [path hm]
@@ -356,6 +357,5 @@
 ;(parse-energy-log  g)
 
 
-
-
+;(get-desorption-data ["/Volumes/Untitled/C4F_05_14"])
 

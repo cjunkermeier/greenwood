@@ -1177,25 +1177,24 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-
-
-
-
 (defn pre-optimize-adatom
  "This is a poor mans optimization.  Really only designed to work with graphene.
  It determines which side of the graphene plane the adatom is on and then moves the
  adatom and the C atom in that direction.
-You must have run gneigh/neighbors on the mol before ucmat/sing this.  It does not check to see
+You must have run gneigh/neighbors on the mol before using this.  It does not check to see
 if you have, and if you haven't it won't optimize, it just spits the mol back out.
   YOU MUST HAVE THE GRAPHENE SHEET SET AT z=0."
  [mol species v]
- (let [func #((keyword "C") (zipmap (map keyword ((comp :nspecies :neigh) %)) ((comp :npos :neigh) %)))
-         upf (gmol/update-mol (gmol/mol-filter {:species species :coordinates #(pos? (last %))} mol) :coordinates #(+ v %))
-       downf (gmol/update-mol (gmol/mol-filter {:species species :coordinates #(neg? (last %))} mol) :coordinates #(- % v))
-         upC (gmol/update-mol (gmol/mol-filter-vec :pos (map func upf) mol) :coordinates #(+ % v))
-       downC (gmol/update-mol (gmol/mol-filter-vec :pos (map func downf) mol) :coordinates #(- % v))
+ (let [func #(map :npos (gmol/mol-filter {:nspecies "C"} (flatten (map :neigh %))))
+         upf (gmol/update-mol :coordinates #(+ v %) (gmol/mol-filter {:species species :coordinates #(pos? (last %))} mol))
+       downf (gmol/update-mol :coordinates #(- % v) (gmol/mol-filter {:species species :coordinates #(neg? (last %))} mol))
+         upC (gmol/update-mol :coordinates #(+ % v) (gmol/mol-filter-vec :pos (func upf) mol))
+       downC (gmol/update-mol :coordinates #(- % v) (gmol/mol-filter-vec :pos (func downf) mol))
        moved (concat upf upC downf downC)]
    (concat (gmol/mol-filter-not-vec :pos (map :pos moved) mol) moved)))
+
+
+
 
 
 
@@ -1406,7 +1405,14 @@ w-ref, To-ref, and Te = 0."
       (/ (mass mol) (gmath/lvs-volume lvs))))))
 
 
-
+(defn middle-half?
+  [min-max vectors]
+  (let [middle (gmath/midpoint [(first min-max)][(second min-max)])
+        lower-quartarian (first (gmath/midpoint [(first min-max)] middle))
+        higher-quartarian (first (gmath/midpoint middle [(second min-max)]))]
+    (and
+      (> (first vectors) lower-quartarian)
+      (< (first vectors) higher-quartarian))))
 
 
 

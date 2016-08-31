@@ -659,7 +659,8 @@ If you want to delete all of the name values of all of the atoms, you do the thi
 Usage: (update-mol-name some-mol)
 
 If you want to delete a particular name from all of the atoms (it doesn't matter
-                                                                if a particular atom actually has that name), you should do the following:
+if a particular atom actually has that name), you should do the following:
+
 Usage (update-mol-name some-mol some-name)
 
 Finally, if you want to remove a name based on some predicate you do this:
@@ -684,8 +685,20 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
 
 
 (defn randomize-mol
+  "This randomally displaces the positions of the atoms in a mol.  The displacement has a standard deviation sd."
   [tgl sd mol]
   (update-mol :coordinates #(gmath/rand-displacement tgl sd %) mol))
+
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
