@@ -9,6 +9,7 @@ Better documentation is fourthcoming.
 
 
 ### Example of how to create a box of 35 DCAH molecules at a density of 0.25 g/ml.
+The following example comes from the paper ["ReaxFF molecular dynamics simulations of intermediate species in dicyanamide anion and nitric acid hypergolic combustion"](http://iopscience.iop.org/article/10.1088/0965-0393/23/7/074007) by Weismiller et al. which used a pre-release version of Greenwood. 
 
 First load the needed name spaces.
 <pre><code>
