@@ -3,10 +3,10 @@
             [greenwood.utils :as utils]
             [greenwood.math :as gmath]
             [greenwood.empirical-data :as ed]
-            [clojure.set :as cset])
-  (:refer-clojure :exclude [* - + == /])
-  (:require [clojure.core.matrix :as cmatrix])
-  (:use clojure.core.matrix.operators))
+            [clojure.set :as cset]
+            [clojure.core.matrix :as cmatrix]
+            [clojure.core.matrix.operators :as cmato])
+  (:refer-clojure :exclude [* - + == /]))
 
 
 
@@ -139,7 +139,7 @@ returns ({:species 8, :coordinates [0 0 0], :name #{:cheesehead}}{:species 1, :c
   (loop [i (first mol)
          m (rest mol)]
     (cond
-      (== (:pos i) index )
+      (cmato/== (:pos i) index )
         i
       (empty? m)
         nil
@@ -400,9 +400,9 @@ returning the averages as a new coordinate."
 (defn shift
   "Displaces all atoms in mol by the vector pnt."
   ([pnt]
-   (update-mol :coordinates #(+ % pnt)))
+   (update-mol :coordinates #(cmato/+ % pnt)))
   ([pnt mol]
-    (update-mol :coordinates #(+ % pnt)  mol)))
+    (update-mol :coordinates #(cmato/+ % pnt)  mol)))
 
 
 
@@ -415,7 +415,7 @@ returning the averages as a new coordinate."
                     (mol-filter {:pos n})
                     (first)
                     (:coordinates)
-                    (- P))]
+                    (cmato/- P))]
     (shift shift-vec  mol)))
 
 
@@ -424,7 +424,7 @@ returning the averages as a new coordinate."
 (defn mol-center
   "Returns a molecule whose center of the atm positions is (0, 0, 0)"
   [mol]
-  (shift (- (coord-average mol)) mol))
+  (shift (cmato/- (coord-average mol)) mol))
 
 
 
@@ -448,12 +448,12 @@ angle is the amount of ration this is a scalar value."
                pnt2 (gmath/random-point  [2 2 2] [4 4 4])]
            (random-rotate-mol mol pnt1 pnt2)))
   ([mol pnt1 pnt2]
-    (let [angle (* (rand 2) Math/PI)]
+    (let [angle (cmato/* (rand 2) Math/PI)]
       (rotate-mol mol pnt1 pnt2 angle)))
   ([mol pnt1 pnt2 angle]
     (let [pnt3 (first
                 (drop-while
-                       (fn [x](> (gmath/find-angle (- pnt2 pnt1) (map - x pnt1))
+                       (fn [x](> (gmath/find-angle (cmato/- pnt2 pnt1) (map cmato/- x pnt1))
                                 angle))
                   (repeatedly #(gmath/random-point [2 2 2] [4 4 4]))))]
       (random-rotate-mol pnt1 pnt3))))
@@ -505,7 +505,7 @@ legacy code."
 
 (defn- center-of-position-
   [mol]
-  (map #(/ % (count mol)) (reduce #(map + %1 %2) (map :coordinates mol))))
+  (map #(cmato// % (count mol)) (reduce #(map cmato/+ %1 %2) (map :coordinates mol))))
 
 
 
@@ -519,16 +519,16 @@ am adding this helper function to try to make it work the way that I want."
   [cop pivot pntb]
   (cond
     (= (first pivot) (first pntb))
-    (cmatrix/cross (- pivot pntb) (+ pivot [1 0 0]))
+    (cmatrix/cross (cmato/- pivot pntb) (cmato/+ pivot [1 0 0]))
     (= (second pivot) (second pntb))
-    (cmatrix/cross (- pivot pntb) (+ pivot [0 1 0]))
+    (cmatrix/cross (cmato/- pivot pntb) (cmato/+ pivot [0 1 0]))
     (= (last pivot) (last pntb))
     (do
-    (cmatrix/cross (- pivot pntb) (+ pivot [0 0 1]))
+    (cmatrix/cross (cmato/- pivot pntb) (cmato/+ pivot [0 0 1]))
       (println [cop pivot pntb])
-     (println (cmatrix/cross (- pivot pntb) (+ pivot [0 0 1]))) )
+     (println (cmatrix/cross (cmato/- pivot pntb) (cmato/+ pivot [0 0 1]))) )
     :else
-    (cmatrix/cross (- pntb pivot) (- cop pivot))))
+    (cmatrix/cross (cmato/- pntb pivot) (cmato/- cop pivot))))
 
 
 
@@ -551,10 +551,10 @@ the sub mol will rotate closer."
         P (if (:coordinates pntb)
             (:coordinates pntb)
             pntb)
-        X (if (zero? (gmath/setzero (cmatrix/dot (- P V) (- cop V))))
+        X (if (zero? (gmath/setzero (cmatrix/dot (cmato/- P V) (cmato/- cop V))))
             (do (println "chad")(pivot-axis- cop V P))
-            (do (println "junkermeier")(cmatrix/cross (- P V) (- cop V))))]
-    (concat mmol (rotate-mol submol V (+ V X) (- angle)))))
+            (do (println "junkermeier")(cmatrix/cross (cmato/- P V) (cmato/- cop V))))]
+    (concat mmol (rotate-mol submol V (cmato/+ V X) (cmato/- angle)))))
 
 
 
@@ -563,7 +563,7 @@ the sub mol will rotate closer."
 (defn mol-find-dihedral
   [mol atoms]
   (let [[a b c d] atoms
-        f #(- (:coordinates (mol-nth mol %2)) (:coordinates (mol-nth mol %1)))]
+        f #(cmato/- (:coordinates (mol-nth mol %2)) (:coordinates (mol-nth mol %1)))]
     (gmath/dihedral (f b a) (f b c) (f c d))))
 
 
@@ -581,7 +581,7 @@ the sub mol will rotate closer."
   two atoms.  I wrote this because I am tired of always having to write
   the code over and over again.  It finds the vector that points from atm1 to atm2."
   [mol atm2 atm1]
-  (- (:coordinates (mol-nth mol atm2))
+  (cmato/- (:coordinates (mol-nth mol atm2))
          (:coordinates (mol-nth mol atm1))))
 
 
@@ -603,7 +603,7 @@ the sub mol will rotate closer."
   "Adds another element to the value of key with the elements of col.
 There needs to be the same number of elements in col and mol."
 [mol  col]
-  (let [coll (map #(+ %1 %2) (map :coordinates mol) col)]
+  (let [coll (map #(cmato/+ %1 %2) (map :coordinates mol) col)]
     (map #(assoc-in %1 [:coordinates] %2) mol coll)))
 
 
@@ -611,9 +611,9 @@ There needs to be the same number of elements in col and mol."
 (defn NEB-guess
   "Produces intermediate images for an Nudged Elastic band calculation."
   [mol1 mol2 n]
-  (let [inv (/ 1 n)
-        avec (map #(- (:coordinates %1)(:coordinates %2)) mol1 mol2)
-        bvec (fn [x] (map #(map (partial * x inv) %) avec))]
+  (let [inv (cmato// 1 n)
+        avec (map #(cmato/- (:coordinates %1)(:coordinates %2)) mol1 mol2)
+        bvec (fn [x] (map #(map (partial cmato/* x inv) %) avec))]
     (pmap #(NEB-helper- mol2 (bvec %)) (reverse (take (inc n) (iterate inc 0))))))
 
 
@@ -621,8 +621,8 @@ There needs to be the same number of elements in col and mol."
 (defn resize-bond
   "This moves atm2 such that the bond length between atm1 and atm2 is lngth."
   [mol atm1 atm2 lngth]
-  (let [a (map (partial * lngth) (cmatrix/normalise (mol-vector mol atm1 atm2)))
-        b (+ (:coordinates (mol-nth mol atm2)) a)]
+  (let [a (map (partial cmato/* lngth) (cmatrix/normalise (mol-vector mol atm1 atm2)))
+        b (cmato/+ (:coordinates (mol-nth mol atm2)) a)]
     (find-assoc-in [:pos :coordinates] [atm1 b] mol)))
 
 
@@ -631,15 +631,15 @@ There needs to be the same number of elements in col and mol."
 (defn center-of-mass
   "Returns the center of mass of mol."
   [mol]
-  (/
+  (cmato//
      (->> mol
-          (map #(* ((comp ed/atomic-mass ed/atomic-numbers :species) %) (:coordinates %)))
-          (reduce + [0.0 0.0 0.0]))
+          (map #(cmato/* ((comp ed/atomic-mass ed/atomic-numbers :species) %) (:coordinates %)))
+          (reduce cmato/+ [0.0 0.0 0.0]))
     (->> mol
          (map :species)
          (map ed/atomic-numbers)
          (map ed/atomic-mass)
-         (reduce + 0.0))))
+         (reduce cmato/+ 0.0))))
 
 
 
@@ -694,8 +694,16 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
 
 
 
-
-
+(defn mols->averaged-mol
+  "Given, mols, which is a set of images of a mol, for example a bunch of time steps from a MD simulation,
+  this function will find the average position of each atom.  The output will be a single mol with
+  average positions.
+  Usage: (mols->averaged-mol g)"
+  [mols]
+  (as-> mols xx
+        (utils/transpose xx)
+        (map coord-average xx)
+        (col->mol :coordinates xx (first mols))))
 
 
 
@@ -728,6 +736,14 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
 (shift [0 0 10])
 )
 
+
+
+
+#_(->> (foldable-chunks "/Users/chadjunkermeier/Desktop/graphene.xyz" )
+(r/map (partial drop 2))
+     (r/map xyz-iota->atoms)
+     (into [])
+            (mols->averaged-mol))
 
 
 
