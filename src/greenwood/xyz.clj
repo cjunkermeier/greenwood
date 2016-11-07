@@ -4,14 +4,14 @@
 
   Uses iota, which uses mmap()."
   (:refer-clojure :exclude [* - + == /])
-  (:use clojure.core.matrix)
-  (:use clojure.core.matrix.operators)
   (:require [clojure.core.reducers :as r]
             [clojure.string :as strng]
             [greenwood.basics :as basic]
             [greenwood.utils :as utils]
             [greenwood.mol :as jmol]
-            iota))
+            [clojure.core.matrix :as cmat]
+            iota
+            [clojure.core.matrix.operators :as cmato]))
 
 
 (defn atom-pos
@@ -87,7 +87,7 @@ Usage: (atoms-pos mol  5)"
   reading of the the xyz-file.
   Usage: (natoms-index 3 10) => ((0 5) (5 10))"
   [natoms nlines]
-  (partition 2 1 (range 0 (inc nlines) (+ 2 natoms))))
+  (partition 2 1 (range 0 (inc nlines) (cmato/+ 2 natoms))))
 
 
 
@@ -96,8 +96,8 @@ Usage: (atoms-pos mol  5)"
 
 (defn reax-index-timesteps
   [start stop howoften natoms]
- (partition 2 1 (map int (range (* (/ start howoften) (+ 2 natoms))
-  (* ((comp inc inc)  (/ stop howoften)) (+ 2 natoms)) (+ 2 natoms)))))
+ (partition 2 1 (map int (range (cmato/* (cmato// start howoften) (cmato/+ 2 natoms))
+  (cmato/* ((comp inc inc)  (cmato// stop howoften)) (cmato/+ 2 natoms)) (cmato/+ 2 natoms)))))
 
 
 
@@ -168,10 +168,10 @@ Usage: (atoms-pos mol  5)"
   "Silly example: count all the chunks."
   (->> (foldable-chunks "myfile.xyz")
        (r/map (constantly 1))
-       (r/fold +))
+       (r/fold cmato/+))
   "Same."
   (->> (foldable-chunks "myfile.xyz")
-       (r/fold + (fn ([] 0) ([x _] (inc x)))))
+       (r/fold cmato/+ (fn ([] 0) ([x _] (inc x)))))
   "Get comment line of each chunk."
   (->> (foldable-chunks "myfile.xyz")
        (r/map (fn [atom-count comment & atoms] comment))
@@ -188,11 +188,11 @@ assumes that there is a newline character between atoms.
 Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms test)."
  ([lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix :double-array  (map read-string (take 3 (rest %)))) nil nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %)))) nil nil nil nil y)
                 (strng/split (strng/triml x) #"\s+")))
  lines (iterate inc 0)))
  ([charge-column lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix :double-array  (map read-string (take 3 (rest %))))  (double (read-string (nth % charge-column))) nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %))))  (double (read-string (nth % charge-column))) nil nil nil y)
                 (strng/split (strng/triml x) #"\s+")))
      lines (iterate inc 0))))
 
@@ -205,11 +205,11 @@ assumes that there is a newline character between atoms.
 Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms test)."
   ([lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix (map read-string (take 3 (rest %)))) nil nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix (map read-string (take 3 (rest %)))) nil nil nil nil y)
                 (strng/split (strng/triml x) #"\s+")))
  lines (iterate inc 0)))
  ([charge-column lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix (map read-string (take 3 (rest %))))  (double (read-string (nth % charge-column))) nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix (map read-string (take 3 (rest %))))  (double (read-string (nth % charge-column))) nil nil nil y)
                 (strng/split (strng/triml x) #"\s+")))
      lines (iterate inc 0))))
 
@@ -225,7 +225,7 @@ Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms test)."
   [string]
   (let [lines (strng/split-lines string)]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix :double-array  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
                 (strng/split (strng/trim x) #"\s+")))
                   lines (iterate inc 0))))
 
@@ -239,7 +239,7 @@ Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms-readable test)."
   [string]
   (let [lines (strng/split-lines string)]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
                 (strng/split (strng/trim x) #"\s+")))
                   lines (iterate inc 0))))
 
@@ -256,11 +256,27 @@ set such that the molecule number was printed out in the 5th column of every lin
 Note that the string should start with the first atom, not with the number of atoms
 in the system.  Also, this assumes that there is a newline character between atoms."
   ([lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix :double-array  (map read-string (take 3 (rest %))))  nil nil nil (read-string (nth % 4)) y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %))))  nil nil nil (read-string (nth % 4)) y)
                 (strng/split (strng/triml x) #"\s+")))
      lines (iterate inc 0)))
   ([charge-column lines]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (matrix :double-array  (map read-string (take 3 (rest %))))  (read-string (nth % charge-column)) nil nil (read-string (nth % 4)) y)
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %))))  (read-string (nth % charge-column)) nil nil (read-string (nth % 4)) y)
+                (strng/split (strng/triml x) #"\s+")))
+     lines (iterate inc 0))))
+
+
+(defn xyz-reax-iota->atoms-readable
+  "This will parse a set of strings into the atoms struct.
+The assumption is that the set of lines are from a reaxff xmolout file, where ixmolo was
+set such that the molecule number was printed out in the 5th column of every line.
+Note that the string should start with the first atom, not with the number of atoms
+in the system.  Also, this assumes that there is a newline character between atoms."
+  ([lines]
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix  (map read-string (take 3 (rest %))))  nil nil nil (read-string (nth % 4)) y)
+                (strng/split (strng/triml x) #"\s+")))
+     lines (iterate inc 0)))
+  ([charge-column lines]
+    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix  (map read-string (take 3 (rest %))))  (read-string (nth % charge-column)) nil nil (read-string (nth % 4)) y)
                 (strng/split (strng/triml x) #"\s+")))
      lines (iterate inc 0))))
 
@@ -303,14 +319,14 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
   and like all other codes that use them, has its own particular method for defining
   their directions"
   [a b c alpha beta gamma]
-  (let [alph (* 0.0174532925199433 alpha)
-        bet (* 0.0174532925199433 beta)
-        gamm (* 0.0174532925199433 gamma)
-        cosphi (/ (- (cos gamm) (* (cos alph) (cos bet))) (sin alph)  (sin bet))
+  (let [alph (cmato/* 0.0174532925199433 alpha)
+        bet (cmato/* 0.0174532925199433 beta)
+        gamm (cmato/* 0.0174532925199433 gamma)
+        cosphi (cmato// (cmato/- (cmat/cos gamm) (cmato/* (cmat/cos alph) (cmat/cos bet))) (cmat/sin alph)  (cmat/sin bet))
         cphi (if (> cosphi 1) 1 cosphi)
-        sinphi  (pow (- 1 (* cphi cphi)) 0.5)]
-    [[(* a (sin bet) sinphi) (* a (sin bet) cosphi) (* a (cos bet))]
-     [0  (* b (sin alph)) (* b (cos alph))]
+        sinphi  (cmat/pow (cmato/- 1 (cmato/* cphi cphi)) 0.5)]
+    [[(cmato/* a (cmat/sin bet) sinphi) (cmato/* a (cmat/sin bet) cosphi) (cmato/* a (cmat/cos bet))]
+     [0  (cmato/* b (cmat/sin alph)) (cmato/* b (cmat/cos alph))]
      [0 0 c]]))
 
 
@@ -332,6 +348,25 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
           (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
           (xyz-reax-iota->atoms charge-column (drop 2 lines))))))
 
+
+
+(defn parse-xmolout-readable
+  ([lines]
+  (let [x (as-> lines x
+                (second x)
+                (strng/split x #"[ X]+"))]
+  (basic/system (first x)
+          (read-string (second x))
+          (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
+          (xyz-reax-iota->atoms-readable (drop 2 lines)))))
+  ([charge-column lines]
+  (let [x (as-> lines x
+                (second x)
+                (strng/split x #"[ X]+"))]
+  (basic/system (first x)
+          (read-string (second x))
+          (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
+          (xyz-reax-iota->atoms-readable charge-column (drop 2 lines))))))
 
 
 
