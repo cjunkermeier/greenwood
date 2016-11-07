@@ -1,13 +1,12 @@
  (ns greenwood.math
   (:require ;[clojure.core.reducers :as r]
+               ;[clojure.set :as cset]
             [greenwood.contrib-math :as cm]
+            [clojure.core.matrix :as cmat]
+            [clojure.core.matrix.operators :as cmato]
             [clojure.core.matrix.stats :as cms]
-            [clojure.core.matrix.random :as cmr]
-            ;[clojure.set :as cset]
-   )
-  (:refer-clojure :exclude [* - + == /])
-  (:use clojure.core.matrix)
-  (:use clojure.core.matrix.operators))
+            [clojure.core.matrix.random :as cmr])
+  (:refer-clojure :exclude [* - + == /]))
 
 
 
@@ -21,27 +20,27 @@
 (defn degrees
   "Transforms the angle a from radians to degrees."
   ^double [a]
-  (* 0.31830988618379  180.  a))
+  (cmato/* 0.31830988618379  180.  a))
 
 (defn radians
   "Transforms the angle a from degrees to radians."
  ^double  [a]
-  (* pi  0.555555555555556  a))
+  (cmato/* pi  0.555555555555556  a))
 
 (defn scalar-times-vector
   "multiplies each element of a vector by the value of scalar."
   [scalar vect]
-  (* scalar vect))
+  (cmato/* scalar vect))
 
 (defn dot-product
   ^double [x y]
-  (dot x y))
+  (cmat/dot x y))
 
 
 (defn cross-product
   "pnt1 and pnt2 are 3-tuples."
   [pnt1 pnt2]
-  (cross pnt1 pnt2))
+  (cmat/cross pnt1 pnt2))
 
 
 
@@ -49,28 +48,28 @@
 (defn magnitude
   "Calculates the sqrt of the sum of the squares of coords"
   [coords]
-  (length coords))
+  (cmat/length coords))
 
 
 
 (defn unit-vec [vect]
   "Creates a unit vector in the direction of the input vect."
-  (normalise vect))
+  (cmat/normalise vect))
 
 (defn euclidean [x y]
   "Returns the euclidean distance between two coordinates, represented as seqs of numbers."
-  (distance x y))
+  (cmat/distance x y))
 
 
 (defn mat-vect-mult [mat vect]
   "Performs matrix vector multplication.
    mat must be a seq of row vectors, not column vectors"
-  (map #(reduce + (map * % vect)) mat))
+  (map #(reduce cmato/+ (map cmato/* % vect)) mat))
 
 (defn mat-mat-mult [mat1 mat2]
   "Performs matrix matrix multiplication.
    mat1 and mat2 are seqs of row vectors, not column vectors."
-  (let [t (transpose mat2)]
+  (let [t (cmat/transpose mat2)]
     (map #(mat-vect-mult t %) mat1)))
 
 
@@ -78,7 +77,7 @@
 (defn average
   "computes the average value of a col"
   ^double [v]
-  (/ (reduce + 0.0 v) (count v)))
+  (cmato// (reduce cmato/+ 0.0 v) (count v)))
 
 
 
@@ -87,9 +86,9 @@
 (defn median
   "computes the median value of a col"
   [v]
-  (let [c (/ (count v) 2)]
+  (let [c (cmato// (count v) 2)]
   (if (integer? c)
-    ((comp cms/mean (partial take 2) (partial drop (dec (floor c))) sort) v)
+    ((comp cms/mean (partial take 2) (partial drop (dec (cmat/floor c))) sort) v)
     ((comp first (partial drop (dec c)) sort) v))))
 
 
@@ -108,14 +107,14 @@
 "Computes the population standard deviation of a vector of values.
   If you collect data from all members of a population or set, you apply the population standard deviation."
   [v]
- (sqrt (/ (sum-sqrs (- v (cms/mean v))) (count v))))
+ (cmat/sqrt (cmato// (sum-sqrs (cmato/- v (cms/mean v))) (count v))))
 
 
 (defn s-sd
 "Computes the sample standard deviation of a vector of values.
   If you collect data from all members of a population or set, you apply the population standard deviation."
   [v]
-  (if (== (- (apply max (map - v))) (apply min v))
+  (if (cmato/== (cmato/- (apply max (map cmato/- v))) (apply min v))
     0
   (cms/sd v)))
 
@@ -123,7 +122,7 @@
 (defn simple-stats
 "Computes the mean, median, standard deviation, and upper and lower quartiles a seq of values.  Outputs the a hash-map."
  [v]
-  (if (== (- (apply max (map - v))) (apply min v))
+  (if (cmato/== (cmato/- (apply max (map cmato/- v))) (apply min v))
     (hash-map :upper nil :lower nil :median (median v) :mean (cms/mean v) :var 0)
     (assoc (quantiles v) :mean (cms/mean v) :var (cms/variance v))))
 
@@ -134,7 +133,7 @@
 (defn midpoint
   "Returns the midpoint between points x and y."
   [x y]
-   (+ x (* (length (- y x)) 0.5 (normalise (- y x)))))
+   (cmato/+ x (cmato/* (cmat/length (cmato/- y x)) 0.5 (cmat/normalise (cmato/- y x)))))
 
 
 
@@ -143,10 +142,10 @@
   "Given an angle, ang, this will transform it to being a positive value in
 the y>0 region of the 2 pi sphere."
   ^double [^double ang]
-  (let [a (mod (abs ang) tau)]
+  (let [a (mod (cmat/abs ang) tau)]
   (cond
     (= pi a) pi
-    (< pi a) (- tau a)
+    (< pi a) (cmato/- tau a)
     (> pi a) a)))
 
 
@@ -157,25 +156,25 @@ the y>0 region of the 2 pi sphere."
 find the vector that is normal to the plane.
 Usage:  (normal-vector [1 0 0] [0 1 0]) => [0.0 0.0 1.0]"
   [v1 v2]
-  (let [descrimant (sqrt (- (* (length v1) (length v2)) (abs (dot v1 v2))))]
-    (* (/ 1.0 descrimant) (cross v1 v2))))
+  (let [descrimant (cmat/sqrt (cmato/- (cmato/* (cmat/length v1) (cmat/length v2)) (cmat/abs (cmat/dot v1 v2))))]
+    (cmato/* (cmato// 1.0 descrimant) (cmat/cross v1 v2))))
 
 
 
 (defn normalize-sum [col]
   "Divides each element of col by the sum of col, such that the new sum is equal to 1."
-  (let [sum (reduce + col)]
+  (let [sum (reduce cmato/+ col)]
     (if (= 0.0 sum)
       (let [c (count col)]
-        (take c (repeat (/ 1.0 c))))
-      (* (/ 1.0 sum) col))))
+        (take c (repeat (cmato// 1.0 c))))
+      (cmato/* (cmato// 1.0 sum) col))))
 
 
 
 (defn find-angle
   "Returns the angle between the vectors a and b."
   [a b]
-  (acos (/ (dot a b) (length a) (length b))))
+  (cmat/acos (cmato// (cmat/dot a b) (cmat/length a) (cmat/length b))))
 
 
 
@@ -184,8 +183,8 @@ Usage:  (normal-vector [1 0 0] [0 1 0]) => [0.0 0.0 1.0]"
   "This computes the angle described the three points a P b, where P is
   the pivot between a and b."
   ^double [a P b]
-  (let [A (- a P)
-        B (- b P)]
+  (let [A (cmato/- a P)
+        B (cmato/- b P)]
     (find-angle A B)))
 
 
@@ -194,7 +193,7 @@ Usage:  (normal-vector [1 0 0] [0 1 0]) => [0.0 0.0 1.0]"
   "Given three points that define the angle A-P-C; this finds the unit vector
 that points from P to the midpoint of the line connecting A and C."
   [A P C]
-(normalise (- (midpoint A C) P)))
+(cmat/normalise (cmato/- (midpoint A C) P)))
 
 
 
@@ -202,9 +201,9 @@ that points from P to the midpoint of the line connecting A and C."
   "This comes from mathworld.wolfram.com.  This finds the shortest distance
 between a point and a line."
   ^double [end1 end2 point]
-  (/
-    (length (cross (- point end1) (- point end2)))
-    (length (- end1 end2))))
+  (cmato//
+    (cmat/length (cmat/cross (cmato/- point end1) (cmato/- point end2)))
+    (cmat/length (cmato/- end1 end2))))
 
 
 
@@ -212,10 +211,10 @@ between a point and a line."
   "Returns the point on a line (defined by the segment end1 and end2)
    which is closest to another point. all args are 3-tuples of nums"
    [end1 end2 point]
-  (let [l (unit-vec (- end2 end1))
-	      h (- point end1)
+  (let [l (unit-vec (cmato/- end2 end1))
+	      h (cmato/- point end1)
 	      theta (find-angle l h)]
-    (+ end1 (*  (length h) (cos theta) l))))
+    (cmato/+ end1 (cmato/*  (cmat/length h) (cmat/cos theta) l))))
 
 
 
@@ -225,7 +224,7 @@ Let pl-point be the position vector of some known point in the plane, let n be a
 and p be the point off of the plane.
   The resultant value is positive if p is on the same side of the plane as the normal vector and negative if it is on the opposite side."
   [n pl-point p]
-  (dot n (- p pl-point)))
+  (cmat/dot n (cmato/- p pl-point)))
 
 
 
@@ -235,7 +234,7 @@ and p be the point off of the plane.
 
 Usage: (tolerance? 2 1.0E-8) => false
        (tolerance? 1.0E-10 1.0E-8) => true"
-   `(< (abs ~value) (abs ~tol)))
+   `(< (cmat/abs ~value) (cmat/abs ~tol)))
 
 
 
@@ -259,15 +258,15 @@ Usage: (tolerance? 2 1.0E-8) => false
   "This rounds a real number at 1E-6."
   ([^double real-num]
   (-> real-num
-    (* 1E6M)
-    (round )
-    (* 1E-6M)
+    (cmato/* 1E6M)
+    (cmat/round )
+    (cmato/* 1E-6M)
     (double )))
   ([^double val ^double real-num ]
   (-> real-num
-    (/ val)
-    (round )
-    (* (bigdec val))
+    (cmato// val)
+    (cmat/round )
+    (cmato/* (bigdec val))
     (double ))))
 
 
@@ -278,14 +277,14 @@ Usage: (tolerance? 2 1.0E-8) => false
    Assumes the a vector is aligned with the cartesian x axis, and the b vector is in the cartesian xy plane."
   [lattice]
   (let [[a b c] lattice]
-    (concat (map length lattice)
+    (concat (map cmat/length lattice)
 	    (map find-angle [b c a] [c a b]))))
 
 
 (defn lvs-volume
   "Given a set of three unit vectors this computes the volume of the unit cell."
   [lvs]
-  (dot (first lvs) (cross (second lvs) (last lvs))))
+  (cmat/dot (first lvs) (cmat/cross (second lvs) (last lvs))))
 
 
 
@@ -301,7 +300,7 @@ Usage: (vectors-equal? [1 1 1][1 1 0.9999999]) -> true"
    (vectors-equal? vec1 vec2 1.0E-6))
   ([vec1 vec2 tol]
   (let [num-args (= (count vec1) (count vec2))
-        differences (- vec1 vec2)]
+        differences (cmato/- vec1 vec2)]
     (every? true? (cons num-args (map #(tolerance? % tol) differences))))))
 
 
@@ -323,7 +322,7 @@ is defined by the line (map - pnt2 pnt1), where pnt2 and pnt1 are both 3-tuples.
 angle is the amount of ration this is a scalar value.
 
 Usage: (rot-arb-axis-not-parallel-z [0 0 1] [1 0 0] [2 0 0] (/ Math/PI 2)) => [0.0 1.0 6.123233995736766E-17]"
-  (let [axis (normalise (- pnt2 pnt1))
+  (let [axis (cmat/normalise (cmato/- pnt2 pnt1))
         x (first point)
         y (second point)
         z (nth point 2)
@@ -337,46 +336,46 @@ Usage: (rot-arb-axis-not-parallel-z [0 0 1] [1 0 0] [2 0 0] (/ Math/PI 2)) => [0
         B (sum-sqrs [v w])
         G (sum-sqrs [u w])
         F (sum-sqrs [u v])
-        magaxis (length axis)
-        rmpa (dot point axis)
-        ca (cos angle)
-        sa (sin angle)]
+        magaxis (cmat/length axis)
+        rmpa (cmat/dot point axis)
+        ca (cmat/cos angle)
+        sa (cmat/sin angle)]
  (vector
-    (+ (* (- (* a B) (* u (- (* b v) (* -1 c w) rmpa))) (- 1 ca))
-       (* x ca)
-       (* (+ (* -1 c v) (* b w) (* -1 w y)  (* v z)) sa))
-    (+ (* (- (* b G) (* v (- (* a u) (* -1 c w) rmpa))) (- 1 ca))
-       (* y ca)
-       (* (+ (* c u) (* -1 a w) (* w x)  (* -1 u z)) sa))
-    (+ (* (- (* c F) (* w (- (* a u) (* -1 b v) rmpa))) (- 1 ca))
-       (* z ca)
-       (* (+ (* -1 b u) (* a v) (* -1 v x)  (* u y)) sa)))))
+    (cmato/+ (cmato/* (cmato/- (cmato/* a B) (cmato/* u (cmato/- (cmato/* b v) (cmato/* -1 c w) rmpa))) (cmato/- 1 ca))
+             (cmato/* x ca)
+             (cmato/* (cmato/+ (cmato/* -1 c v) (cmato/* b w) (cmato/* -1 w y)  (cmato/* v z)) sa))
+    (cmato/+ (cmato/* (cmato/- (cmato/* b G) (cmato/* v (cmato/- (cmato/* a u) (cmato/* -1 c w) rmpa))) (cmato/- 1 ca))
+             (cmato/* y ca)
+             (cmato/* (cmato/+ (cmato/* c u) (cmato/* -1 a w) (cmato/* w x)  (cmato/* -1 u z)) sa))
+    (cmato/+ (cmato/* (cmato/- (cmato/* c F) (cmato/* w (cmato/- (cmato/* a u) (cmato/* -1 b v) rmpa))) (cmato/- 1 ca))
+             (cmato/* z ca)
+             (cmato/* (cmato/+ (cmato/* -1 b u) (cmato/* a v) (cmato/* -1 v x)  (cmato/* u y)) sa)))))
 
 
 
 
 (defn xrotation [theta inputvec]
-  (let [s (sin theta)
-        c (cos theta)
+  (let [s (cmat/sin theta)
+        c (cmat/cos theta)
         [i1 i2 i3] inputvec]
     [i1,
-     (+ (* i2 c) (* i3 s)),
-     (- (* i3 c) (* i2 s))]))
+     (cmato/+ (cmato/* i2 c) (cmato/* i3 s)),
+     (cmato/- (cmato/* i3 c) (cmato/* i2 s))]))
 
 (defn yrotation [theta inputvec]
-  (let [s (sin theta)
-        c (cos theta)
+  (let [s (cmat/sin theta)
+        c (cmat/cos theta)
         [i1 i2 i3] inputvec]
-    [(- (* i1 c) (* i3 s)),
+    [(cmato/- (cmato/* i1 c) (cmato/* i3 s)),
      i2,
-     (+ (* i3 c) (* i1  s))]))
+     (cmato/+ (cmato/* i3 c) (cmato/* i1  s))]))
 
 (defn zrotation [theta inputvec]
-  (let [s (sin theta)
-        c (cos theta)
+  (let [s (cmat/sin theta)
+        c (cmat/cos theta)
         [i1 i2 i3] inputvec]
-    [(-  (* i1  c) (* i2 s)),
-     (+ (* i1 s) (* i2 c)),
+    [(cmato/-  (cmato/* i1  c) (cmato/* i2 s)),
+     (cmato/+ (cmato/* i1 s) (cmato/* i2 c)),
      i3]))
 
 
@@ -391,14 +390,14 @@ point is a 3-tuple containing the point you want to rotate around the axis that
 is defined by the line (map - pnt2 pnt1), where pnt2 and pnt1 are both 3-tuples
 that define the axis.
 angle is the amount of ration this is a scalar value."
-  (let [axis (- pnt2 pnt1)
+  (let [axis (cmato/- pnt2 pnt1)
         output (cond
                  (and (tolerance? (second axis) 1.0E-6) (tolerance? (last axis) 1.0E-6))
-                 (+ pnt1 (xrotation angle (- point pnt1)))
+                 (cmato/+ pnt1 (xrotation angle (cmato/- point pnt1)))
                  (and (tolerance? (first axis) 1.0E-6) (tolerance? (last axis) 1.0E-6))
-                 (+ pnt1 (yrotation angle (- point pnt1)))
+                 (cmato/+ pnt1 (yrotation angle (cmato/- point pnt1)))
                  (and (tolerance? (first axis) 1.0E-6) (tolerance? (second axis) 1.0E-6))
-                 (+ pnt1 (zrotation angle (- point pnt1)))
+                 (cmato/+ pnt1 (zrotation angle (cmato/- point pnt1)))
                  :else
                  (rot-arb-axis-not-parallel-z point pnt1 pnt2 angle))]
     (map #(setzero %) output)))
@@ -410,42 +409,42 @@ angle is the amount of ration this is a scalar value."
   "This produces a rotation matrix that will rotate a vector onto the x-axis.
 This function is only a helper function and is desigened to only be used within
 rotate-vec-to-axis within this namespace."
-  (let [vw (length [v w])
-        uvw (length [u v w])]
+  (let [vw (cmat/length [v w])
+        uvw (cmat/length [u v w])]
     (cond
       (and (tolerance? w 1.0E-6) (tolerance? v 1.0E-6))
       [[1.0 0.0 0.0][0.0 1.0 0.0][0.0 0.0 1.0]]
-    :else [[(/ u uvw)   (/ v uvw) (/ w uvw)]
-   [(/ vw uvw -1.0) (/ (* u v) vw uvw) (/ (* u w) vw uvw)]
-   [0.0 (/ w vw -1.0)  (/ v vw)]])))
+    :else [[(cmato// u uvw)   (cmato// v uvw) (cmato// w uvw)]
+   [(cmato// vw uvw -1.0) (cmato// (cmato/* u v) vw uvw) (cmato// (cmato/* u w) vw uvw)]
+   [0.0 (cmato// w vw -1.0)  (cmato// v vw)]])))
 
 
 (defn- rotate-vec-2-yaxis [u v w]
   "This produces a rotation matrix that will rotate a vector onto the y-axis.
 This function is only a helper function and is desigened to only be used within
 rotate-vec-to-axis within this namespace."
-  (let [uw (length [u w])
-        uvw (length [u v w])]
+  (let [uw (cmat/length [u w])
+        uvw (cmat/length [u v w])]
     (cond
       (and (tolerance? w 1.0E-6) (tolerance? v 1.0E-6))
       [[1.0 0.0 0.0][0.0 1.0 0.0][0.0 0.0 1.0]]
-    :else [[(/ u uw)  0.0 (/ w uw -1.0)]
-   [(/ u uvw) (/ v uvw) (/ w uvw)]
-   [(/ (* u v) uw uvw) (/ uw uvw -1.0)  (/ (* w v) uw uvw)]])))
+    :else [[(cmato// u uw)  0.0 (cmato// w uw -1.0)]
+   [(cmato// u uvw) (cmato// v uvw) (cmato// w uvw)]
+   [(cmato// (cmato/* u v) uw uvw) (cmato// uw uvw -1.0)  (cmato// (cmato/* w v) uw uvw)]])))
 
 
 (defn- rotate-vec-2-zaxis [u v w]
   "This produces a rotation matrix that will rotate a vector onto the z-axis.
 This function is only a helper function and is desigened to only be used within
 rotate-vec-to-axis within this namespace."
-  (let [uv (length [u v])
-        uvw (length [u v w])]
+  (let [uv (cmat/length [u v])
+        uvw (cmat/length [u v w])]
     (cond
       (and (tolerance? u 1.0E-6) (tolerance? v 1.0E-6))
       [[1.0 0.0 0.0][0.0 1.0 0.0][0.0 0.0 1.0]]
-    :else [[(/ (* u w) uv uvw)   (/ (* w v) uv uvw)   (/ uv uvw -1.0)]
-   [(/ v uv -1.0) (/ u uv) 0.0]
-   [(/ u uvw) (/ v uvw)  (/ w uvw)]])))
+    :else [[(cmato// (cmato/* u w) uv uvw)   (cmato// (cmato/* w v) uv uvw)   (cmato// uv uvw -1.0)]
+   [(cmato// v uv -1.0) (cmato// u uv) 0.0]
+   [(cmato// u uvw) (cmato// v uvw)  (cmato// w uvw)]])))
 
 
 
@@ -494,8 +493,8 @@ for this is linear-interpolation.
 
 Usage: (linear-interpolation [26.43534 234.24] [0 255] 118.12) => 112.50752653958772"
   [[initial-min initial-max] [target-min target-max] value]
-  (let [scale (/  (- target-max target-min) (- initial-max initial-min))]
-    (+ target-min (* (- value initial-min) scale))))
+  (let [scale (cmato//  (cmato/- target-max target-min) (cmato/- initial-max initial-min))]
+    (cmato/+ target-min (cmato/* (cmato/- value initial-min) scale))))
 
 
 
@@ -507,12 +506,12 @@ for this is linear-interpolation.
 
 Usage: (linear-interpolation-definite [0 5] [0 1] 6) => 1"
   [[initial-min initial-max] [target-min target-max] value]
-  (let [scale (/  (- target-max target-min) (- initial-max initial-min))
+  (let [scale (cmato//  (cmato/- target-max target-min) (cmato/- initial-max initial-min))
         v (cond
                       (< value initial-min) initial-min
                       (> value initial-max) initial-max
                       :else  value)]
-    (+ target-min (* (- v initial-min) scale))))
+    (cmato/+ target-min (cmato/* (cmato/- v initial-min) scale))))
 
 
 
@@ -521,12 +520,12 @@ Usage: (linear-interpolation-definite [0 5] [0 1] 6) => 1"
   "This is used to define a rotation matrix around one of the cardinal axes.
 Usage: (card-rot-mat pi :z) =>   "
   [angle axis]
-   (let [s (sin angle)
-         c (cos angle)]
+   (let [s (cmat/sin angle)
+         c (cmat/cos angle)]
      (cond
-       (= axis :x) [[1.0 0.0 0.0][0.0 c s][0.0 (- s) c]]
-       (= axis :y) [[c 0.0 (* -1 s)][0.0 1.0 0.0][s 0.0 c]]
-       (= axis :z) [[c (- s) 0.0][s c 0.0][0.0 0.0 1.0]])))
+       (= axis :x) [[1.0 0.0 0.0][0.0 c s][0.0 (cmato/- s) c]]
+       (= axis :y) [[c 0.0 (cmato/* -1 s)][0.0 1.0 0.0][s 0.0 c]]
+       (= axis :z) [[c (cmato/- s) 0.0][s c 0.0][0.0 0.0 1.0]])))
 
 
 (defn dihedral
@@ -534,9 +533,9 @@ Usage: (card-rot-mat pi :z) =>   "
 pivot, this computes the angle between b1 and b3."
   [b1 b2 b3]
   (-> (cm/atan2
-    (dot (* (length b2) b1) (cross b2 b3))
-    (dot (cross b1 b2) (cross b2 b3)))
-    (+ pi)))
+    (cmat/dot (cmato/* (cmat/length b2) b1) (cmat/cross b2 b3))
+    (cmat/dot (cmat/cross b1 b2) (cmat/cross b2 b3)))
+    (cmato/+ pi)))
 
 
 
@@ -546,7 +545,7 @@ pivot, this computes the angle between b1 and b3."
 damn idiots who implemented the IEEE floating point specification."
   ([x y] `(tolerated-eq ~x ~y 0.00001))
   ([x y epsilon]
-    `(<= (abs (- ~x ~y)) ~epsilon)))
+    `(<= (abs (cmato/- ~x ~y)) ~epsilon)))
 
 
 
@@ -562,7 +561,7 @@ Usage: (tolerated-lt 12.304999999999998 12.306) => true"
   ([a b]
     `(tolerated-lt ~a ~b 10E-6))
   ([a b epsilon]
-      `(and (< ~a ~b) (not (tolerance? (- ~a ~b) ~epsilon)))))
+      `(and (< ~a ~b) (not (tolerance? (cmato/- ~a ~b) ~epsilon)))))
 
 (defmacro tolerated-gt
   "Computers often lie to us about the precision of a number. They will often
@@ -576,7 +575,7 @@ Usage: (tolerated-gt 12.306 12.304999999999998) => true"
   ([a b]
     `(tolerated-gt ~a ~b 10E-6))
   ([a b epsilon]
-      `(and (> ~a ~b) (not (tolerance? (- ~a ~b) ~epsilon)))))
+      `(and (> ~a ~b) (not (tolerance? (cmato/- ~a ~b) ~epsilon)))))
 
 (defmacro tolerated-lte
   "Computers often lie to us about the precision of a number. They will often
@@ -591,8 +590,8 @@ Usage: (tolerated-lte 12.304999999999998 12.306) => true"
     ~(tolerated-lte ~a ~b 10E-6))
   ([a b epsilon]
       (or
-        `(and (< ~a ~b) (not (tolerance? (- ~a ~b) ~epsilon)))
-        (or (< ~a ~b) (tolerance? (- ~a ~b) ~epsilon)))))
+        `(and (< ~a ~b) (not (tolerance? (cmato/- ~a ~b) ~epsilon)))
+        (or (< ~a ~b) (tolerance? (cmato/- ~a ~b) ~epsilon)))))
 
 (defmacro tolerated-gte
   "Computers often lie to us about the precision of a number. They will often
@@ -607,14 +606,14 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
     `(tolerated-gte ~a ~b 10E-6))
   ([a b epsilon]
       `(or
-        (and (> ~a ~b) (not (tolerance? (- ~a ~b) ~epsilon)))
-        (or (> ~a ~b) (tolerance? (- ~a ~b) ~epsilon)))))
+        (and (> ~a ~b) (not (tolerance? (cmato/- ~a ~b) ~epsilon)))
+        (or (> ~a ~b) (tolerance? (cmato/- ~a ~b) ~epsilon)))))
 
 
 
 (defn random-point [mins maxes]
   "Generates a random point inside the specified boundaries."
-  (map #(+ (* (- %2 %1) (rand)) %1)
+  (map #(cmato/+ (cmato/* (cmato/- %2 %1) (rand)) %1)
        mins maxes))
 
 (defn rand-point-fractional
@@ -633,11 +632,11 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
   Usage: (rand-displacement :xyz 0.1 [1 0 0]) => (1.0056703785638446 -0.0034408339313103174 0.002919629292373202)"
   [tgl sd pnt]
   (cond
-    (= tgl :xyz) (the-rotation-function (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (rand-point-fractional) (rand tau))
-    (= tgl :xy) (the-rotation-function (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (+ pnt [0.0 0.0 1.0]) (rand tau))
-    (= tgl :z) (+ pnt (abs [0.0 0.0 (* (first (cmr/sample-normal 1)) sd)]))
-    (= tgl :x) (+ pnt (abs [(* (first (cmr/sample-normal 1)) sd) 0.0 0.0]))
-    (= tgl :y) (+ pnt (abs [0.0 (* (first (cmr/sample-normal 1)) sd)  0.0]))))
+    (= tgl :xyz) (the-rotation-function (cmato/+ pnt (cmat/abs [(cmato/* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (rand-point-fractional) (rand tau))
+    (= tgl :xy) (the-rotation-function (cmato/+ pnt (cmat/abs [(cmato/* (first (cmr/sample-normal 1)) sd) 0.0 0.0])) pnt (cmato/+ pnt [0.0 0.0 1.0]) (rand tau))
+    (= tgl :z) (cmato/+ pnt (cmat/abs [0.0 0.0 (cmato/* (first (cmr/sample-normal 1)) sd)]))
+    (= tgl :x) (cmato/+ pnt (cmat/abs [(cmato/* (first (cmr/sample-normal 1)) sd) 0.0 0.0]))
+    (= tgl :y) (cmato/+ pnt (cmat/abs [0.0 (cmato/* (first (cmr/sample-normal 1)) sd)  0.0]))))
 
 
 
@@ -649,17 +648,17 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
   Usage: (intersecting-spheres? 1 2 [0 0 0] [0 0 2.5]) => true
   Usage: (intersecting-spheres? 1 2 [0 0 0] [0 0 3.5]) => false"
   [r1 r2 p1 p2]
-  (> (+ r1 r2) (distance p1 p2)))
+  (> (cmato/+ r1 r2) (cmat/distance p1 p2)))
 
 
 
 
 (defn normalize-mag [lst]
   "Divides each element of lst by the magnitude of lst, such that the new magnitude is equal to 1."
-  (let [mag (length lst)]
+  (let [mag (cmat/length lst)]
     (if (= 0.0 mag)
       (recur (take (count lst) (repeat 1)))
-      (* (/ 1 mag) lst))))
+      (cmato/* (cmato// 1 mag) lst))))
 
 
 
@@ -673,16 +672,16 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
         y (float b)
         z (float c)
         one (int 1);primitive locals = 10X faster!
-	sina (sin angle) cosa (cos angle) dcosa (- one cosa)
-	r00 (+ (* x x) (* (- one (* x x)) cosa))
-	r01 (- (* x y dcosa) (* z sina))
-	r02 (+ (* x z dcosa) (* y sina))
-	r10 (+ (* x y dcosa) (* z sina))
-	r11 (+ (* y y) (* (- one (* y y)) cosa))
-	r12 (- (* y z dcosa) (* x sina))
-	r20 (- (* x z dcosa) (* y sina))
-	r21 (+ (* y z dcosa) (* x sina))
-	r22 (+ (* z z) (* (- one (* z z)) cosa))]
+	sina (cmat/sin angle) cosa (cmat/cos angle) dcosa (cmato/- one cosa)
+	r00 (cmato/+ (cmato/* x x) (cmato/* (cmato/- one (cmato/* x x)) cosa))
+	r01 (cmato/- (cmato/* x y dcosa) (cmato/* z sina))
+	r02 (cmato/+ (cmato/* x z dcosa) (cmato/* y sina))
+	r10 (cmato/+ (cmato/* x y dcosa) (cmato/* z sina))
+	r11 (cmato/+ (cmato/* y y) (cmato/* (cmato/- one (cmato/* y y)) cosa))
+	r12 (cmato/- (cmato/* y z dcosa) (cmato/* x sina))
+	r20 (cmato/- (cmato/* x z dcosa) (cmato/* y sina))
+	r21 (cmato/+ (cmato/* y z dcosa) (cmato/* x sina))
+	r22 (cmato/+ (cmato/* z z) (cmato/* (cmato/- one (cmato/* z z)) cosa))]
     [[r00 r01 r02] [r10 r11 r12] [r20 r21 r22]]))
 
 
@@ -691,17 +690,17 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
   some other arbitrary vector B. This produces a rotation matrix."
   [A B]
   (let [angle1 (find-angle A B)
-	      vector1 (cross A B)]
+	      vector1 (cmat/cross A B)]
 	       (get-rotation-matrix vector1 angle1)))
 
 
 
 (defn common-factorize
   [v-reals]
-  (let [f #(if (= (floor %) %) 1 ((comp denominator rationalize) %))
+  (let [f #(if (= (cmat/floor %) %) 1 ((comp denominator rationalize) %))
         fa (map f v-reals)
         m (apply max (map f v-reals))]
-        (map (comp int (partial * m)) v-reals)))
+        (map (comp int (partial cmato/* m)) v-reals)))
 
 
 
