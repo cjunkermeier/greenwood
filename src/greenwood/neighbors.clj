@@ -4,10 +4,10 @@
             [greenwood.mol :as gmol]
             [greenwood.math :as gmath]
             [greenwood.utils :as utils]
-            [clojure.math.combinatorics :as mathcomb])
-  (:refer-clojure :exclude [* - + == /])
-  (:use clojure.core.matrix)
-  (:use clojure.core.matrix.operators))
+            [clojure.math.combinatorics :as mathcomb]
+            [clojure.core.matrix :as cmat]
+            [clojure.core.matrix.operators :as cmato])
+  (:refer-clojure :exclude [* - + == /]))
 
 ;We can turn off the vectorz-clj implementation of core.matrix by commenting out this line.
 ;(set-current-implementation :vectorz)
@@ -20,7 +20,7 @@
 (defn- distances- [atomm]
   "mol is one time step of the xyz file. atomm is some atom."
   (let [a (:coordinates atomm)]
-  (comp (map :coordinates) (map (partial distance a)))))
+  (comp (map :coordinates) (map (partial cmat/distance a)))))
 
 
 (defn distances [mol atomm]
@@ -47,7 +47,7 @@
   "This computes the distances between atomm and all of the other atoms in mol.  Thus the length of the resulting seq will be of length (dec (count mol)).
   mol is one time step of the xyz file. atomm is some atom."
   (let [a (:coordinates atomm)]
-  (doall (mapv (comp (partial distance a) :coordinates) (gmol/mol-filter-not {:pos (:pos atomm)} mol)))))
+  (doall (mapv (comp (partial cmat/distance a) :coordinates) (gmol/mol-filter-not {:pos (:pos atomm)} mol)))))
 
 
 
@@ -149,7 +149,7 @@ too close."
   "Returns the atom in mol closest to point-vec.
 Usage:  (neartest-atom-point graphene [0 0 0])"
   [mol point-vec]
-  (let [distancevec (map (comp length #(- point-vec (:coordinates %)))  mol)
+  (let [distancevec (map (comp cmat/length #(cmato/- point-vec (:coordinates %)))  mol)
         minval (apply min distancevec)
         pos (utils/positions #{minval} distancevec)]
     (gmol/mol-nth mol (first pos))))
@@ -207,7 +207,7 @@ In this case atom-num is the value of :pos.  This does not take into account
 periodic boundaries.  In order for this to work you will have had to run neighbors
 on mol first."
   ([mol atom-num]
-    (neighbor-order mol atom-num (* 2 (count mol))))
+    (neighbor-order mol atom-num (cmato/* 2 (count mol))))
   ([mol atom-num maxnum]
   (letfn [(group [done intermediate whatsleft i]
             (let [a (vec (set (flatten (map (comp (partial map :npos) :neigh) intermediate))))]
@@ -238,14 +238,8 @@ on mol first."
   (->> mol
     (map :neigh)
     (map count)
-    (map (partial * 0.5))
-     (reduce +)))
-
-
-
-
-
-
+    (map (partial cmato/* 0.5))
+     (reduce cmato/+)))
 
 
 
@@ -259,6 +253,22 @@ on mol first."
     (if (empty? m)
       (concat d (filter #(> max-dist %) (distances m a)))
       (recur (first m) (rest m) (concat d (filter #(> max-dist %) (distances m a)))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
