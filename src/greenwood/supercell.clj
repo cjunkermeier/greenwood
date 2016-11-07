@@ -448,6 +448,89 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
 
 
 
+
+
+
+
+
+(defn create-surface-cartesian
+  "atoms is a unit cell in fractional coordinates.
+origin is defined in the fractional coordinates.
+n1 n2 n3 are integers defining how big a supercell to create
+      (this is the cell from which the surface will be chisled).
+lvs are the lattice vectors defining the unit cell.
+C1, C3 are vectors defined to be the new x- and z-directions.
+nn1 nn2 nn3 are integers the determine how many lattice vectors to move over
+(from the origin) before starting the chisiling processes.
+x y z are the height, width, and depth of the surface from -x/2 to x/2, -y/2 to
+y/2, and -z/2 to z/2.
+
+Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
+         (a-one 1.421) (a-three 1.421) [0 0 10](a-one 1.421)[0 0 10]
+         10 10 0 (* 4 24.61) (* 5 2.461) 1)"
+  ([atoms origin lvs C1 C3 x]
+    (let [[nn1 nn2 nn3] (map int (* 0.6 [x 0 0]))
+          y 100
+          z 100
+          epsilon 0.01]
+      (create-surface-cartesian atoms origin nn1 nn2 nn3 lvs C1 C3 x y z epsilon)))
+
+  ([atoms origin lvs C1 C3 x y]
+    (let [[nn1 nn2 nn3] (map int (* 3.9 [x y 0]))
+          z 100
+          epsilon 0.01]
+      (create-surface-cartesian atoms origin nn1 nn2 nn3 lvs C1 C3 x y z epsilon)))
+
+  ([atoms origin lvs C1 C3 x y z]
+    (let [[nn1 nn2 nn3] (map int (* 0.6 [x y z]))
+          epsilon 0.01]
+      (create-surface-cartesian atoms origin nn1 nn2 nn3 lvs C1 C3 x y z epsilon)))
+
+  ([atoms origin n1 n2 n3 lvs C1 C3 x y z epsilon]
+    (let [[A1 A2 A3] lvs
+          f #(mmul (gmath/rotate-vec-to-axis C1 :x) %)
+          alpha (Math/asin (/ (dot C3 [0 0 1]) (length C3)))
+          cart-origin (+ (* (first origin) A1)
+                        (* (second origin) A2)
+                        (* (last origin) A3))
+          projectors (computation-projectors n1 n2 n3)
+          [xx yy zz] (* -0.5 [x y z])
+          [xxx yyy zzz] (* 0.5 [x y z])
+          box? #(and (gmath/tolerated-gte (first %) xx epsilon)
+                  (gmath/tolerated-lt (first %) xxx epsilon)
+                  (gmath/tolerated-gte (second %) yy epsilon)
+                  (gmath/tolerated-lt (second %) yyy epsilon)
+                  (gmath/tolerated-gte (last %) zz epsilon)
+                  (gmath/tolerated-lt (last %) zzz epsilon))]
+      (b/unitcell [[x 0.0 0.0] [0.0 y 0.0] [0.0 0.0 z]]
+      ((comp
+         #(gmol/mol-filter {:coordinates box?} %)
+         #(gmol/rotate-mol % [0 0 0] [0 0 1] alpha)
+         #(gmol/update-mol :coordinates f %)
+         #(gmol/shift (* -1 cart-origin) %)
+         #(fractional->cartesian % lvs))
+        (create-supercell atoms projectors))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 (defn define-cell
   "This defines the bounding box (parallelepiped) of a unit cell.
   The output is a vector where the first two elements are opposite
@@ -625,8 +708,6 @@ lattice parameters for mol."
            (apply multiples (map (comp gmath/round-decimal length first) lvss))
            (apply multiples (map (comp gmath/round-decimal length second) lvss))
            (apply multiples (map (comp gmath/round-decimal length last) lvss))))))
-
-
 
 
 
