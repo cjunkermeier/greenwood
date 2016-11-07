@@ -1,54 +1,55 @@
 (ns greenwood.empirical-data
   (:refer-clojure :exclude [* - + == /])
-  (:use clojure.core.matrix)
-  (:use clojure.core.matrix.operators))
+  (:require [clojure.core.matrix :as cmat]
+            [clojure.core.matrix.operators :as cmato]))
 
 
 
-(def ^:const Avogadro-number (* 6.02214179 (pow  10. 23)))
+(def ^:const Avogadro-number (cmato/* 6.02214179 (cmat/pow  10. 23)))
 (def  ^:const kB 0.0000861734315);Boltzmann constant units of eV/K
 (def ^:const  pi 3.141592653589793)
 (def ^:const tau 6.283185307179586)
 
-(defn Angstrom->Bohr [x] (* x 1.889682673))
-(defn Bohr->Angstrom [x] (* x 0.529189379))
+(defn Angstrom->Bohr [x] (cmato/* x 1.889682673))
+(defn Bohr->Angstrom [x] (cmato/* x 0.529189379))
 
 
 
-(defn Ry->eV [x] (* x 13.605698066))
-(defn eV->Ry [x] (/ x 13.605698066))
-(defn kelvin->eV [T] (* kB T))
+(defn Ry->eV [x] (cmato/* x 13.605698066))
+(defn eV->Ry [x] (cmato// x 13.605698066))
+(defn kelvin->eV [T] (cmato/* kB T))
 
+(Ry->eV (cmato/- -3331.31268534  -3331.321586419))
 
-(defn kcalpermol->eV [x] (* x 0.04336))
-(defn eV->kcalpermol [x] (/ x 0.04336))
+(defn kcalpermol->eV [x] (cmato/* x 0.04336))
+(defn eV->kcalpermol [x] (cmato// x 0.04336))
 
 (defn Ry->kcalpermol [x] (eV->kcalpermol (Ry->eV x)))
 
 
-(defn kJpermol->eV [x] (* x 0.010153795839444585))
-(defn eV->kJpermol [x] (/ x 0.010153795839444585))
+(defn kJpermol->eV [x] (cmato/* x 0.010153795839444585))
+(defn eV->kJpermol [x] (cmato// x 0.010153795839444585))
 
-(defn J->eV [x] (* x 6.24150974E18))
+(defn J->eV [x] (cmato/* x 6.24150974E18))
 
-(defn eV->J [x] (/ x 6.24150974E18))
+(defn eV->J [x] (cmato// x 6.24150974E18))
 
-(defn eV->K [x] (* x 11604.5))
+(defn eV->K [x] (cmato/* x 11604.5))
 
 (defn radians->degrees [x]
-  (let [d (* x 57.2957795130823)]
+  (let [d (cmato/* x 57.2957795130823)]
     (cond (> d 360.0)
-           (- d 360.0)
+           (cmato/- d 360.0)
           (< d -360.0)
-          (+ d 360.0)
+          (cmato/+ d 360.0)
           :else d)))
-(defn degrees->radians [x] (* x 0.0174532925199433))
+(defn degrees->radians [x] (cmato/* x 0.0174532925199433))
 
-(defn Angstrom->meters [x] (* x 1.0E-10))
+(defn Angstrom->meters [x] (cmato/* x 1.0E-10))
 
-(defn Hartree->kcalpermol [x] (* x 627.5095))
-(defn Hartree->eV [x] (* x 27.2116))
-(defn Hz->inverse_cm [x] (* x 29979245800.0))
+(defn Hartree->kcalpermol [x] (cmato/* x 627.5095))
+(defn Hartree->eV [x] (cmato/* x 27.2116))
+(defn Hz->inverse_cm [x] (cmato/* x 29979245800.0))
 
 (eV->kcalpermol 9.17);Hydroxyl
 (eV->kcalpermol 4.68);Epoxy
