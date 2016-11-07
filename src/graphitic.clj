@@ -267,6 +267,30 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 ;;;;;;;;;;;;;;;;;;;;;;;;; supercells ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn make-armchair-graphene-supercell
+"This will make a graphene supercell that runs in the x-direction.
+  The y-direction edges are armchair.
+
+CC-dist is the bond length between neighboring C atoms,
+nxcells is the number of unit cells in the direction of the ribbon,
+nycells is the number of unit cells in the direction perpendicular to the ribbon,
+rtl is a boolean that determins if the C atoms with the largest y-values are discarded"
+[C1 C2 C3 C4 CC-dist nxcells nycells rtl]
+(let [uclvs (armchair-lvs CC-dist)
+         sc (if (true? rtl)
+                (remove-highest-y (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))
+                (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))]
+  (hash-map :lvs [(map * (first uclvs) (repeat nxcells))
+    (map * (second uclvs) (repeat nycells))
+    (last uclvs)]
+            :mol (atom-pos sc))))
+
+
+
+
+
+
+
 
 (defn make-zigzag-graphene-supercell
 "This will make a graphene supercell that runs in the x-direction.
@@ -1413,6 +1437,19 @@ w-ref, To-ref, and Te = 0."
     (and
       (> (first vectors) lower-quartarian)
       (< (first vectors) higher-quartarian))))
+
+
+(defn middle-half-cheat?
+  [min-max cheat-distanceL cheat-distanceR vectors]
+  (let [middle (gmath/midpoint [(first min-max)][(second min-max)])
+        lower-quartarian (first (gmath/midpoint [(first min-max)] middle))
+        higher-quartarian (first (gmath/midpoint middle [(second min-max)]))]
+    (and
+      (> (first vectors) (+ lower-quartarian cheat-distanceL))
+      (< (first vectors) (- higher-quartarian cheat-distanceR)))))
+
+
+
 
 
 
