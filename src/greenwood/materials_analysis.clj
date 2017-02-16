@@ -34,7 +34,7 @@ Bnot_prime = unitless"
       (inccore/div (inccore/mult Bnot Vnot)(inccore/minus 1 Bnot-prime)))))
 
 
-(defn Birch-Murnaghan-EOS [vol-col en-col]
+(defn Birch-Murnaghan-EOS
   "This is used to compute the cohesive properties of a material using the
 Birch-Murnaghan equation. The input is a col of lattice volumes (lattice constants),
 vol-col, for the material along with the total energy, en-col, associated with
@@ -44,7 +44,11 @@ with respect to pressure.  This can be used with just a col of lattice constants
 in place of lattice volumes, but you will no longer obtain the bulk modulus.
 
 If the output ends up being (NaN NaN NaN NaN) you could have exchanged the positioning
-of the volume and energy vectors in the call of this function."
+of the volume and energy vectors in the call of this function.
+
+The user while the values of bnot and bnotprime will generally work, I have found that
+  at times the user may need to try a few different values to get a result that converges."
+  ([vol-col en-col]
   (let [min-en (apply min en-col)
         where (first (gutil/positions #(= min-en %) en-col))
         min-lat (nth vol-col where)]
@@ -52,9 +56,35 @@ of the volume and energy vectors in the call of this function."
                :Bnot (nth (:coefs %) 2) :Bnot-prime (nth (:coefs %) 3)
                :rss (:rss %))
      (incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat 4 2]))))
+  ([bnot bnotprime vol-col en-col]
+  (let [min-en (apply min en-col)
+        where (first (gutil/positions #(= min-en %) en-col))
+        min-lat (nth vol-col where)]
+   (#(hash-map :Enot (first (:coefs %)) :Vnot (second (:coefs %))
+               :Bnot (nth (:coefs %) 2) :Bnot-prime (nth (:coefs %) 3)
+               :rss (:rss %))
+     (incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat bnot bnotprime])))))
 
 
-
+#_(def h [3.35
+3.375
+3.4
+3.425
+3.45
+3.475
+3.5
+3.525
+3.55])
+#_(def en [-2217.3129
+-2217.3271
+-2217.3362
+-2217.3406
+-2217.3408
+-2217.3373
+-2217.3307
+-2217.3212
+-2217.3092])
+#_(Birch-Murnaghan-EOS 4.2 2 h en)
 
 
 (defn polynomial-eqn
@@ -88,6 +118,7 @@ of the volume and energy vectors in the call of this function."
     (#(hash-map :Enot (second (:coefs %)) :Vnot (first (:coefs %))
                :rss (:rss %))
      (incopt/non-linear-model polynomial-eqn en-col vol-col [min-v min-en 0.00001 1.0 1 1]))))
+
 
 
 
