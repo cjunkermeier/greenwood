@@ -36,6 +36,8 @@
 
 (defn eV->K [x] (cmato/* x 11604.5))
 
+(defn eA->D [x] (cmato/* x 0.20819434)) ;Debye (D), unit used in dipole moment
+
 (defn radians->degrees [x]
   (let [d (cmato/* x 57.2957795130823)]
     (cond (> d 360.0)
