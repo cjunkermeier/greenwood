@@ -10,4 +10,4 @@ Better documentation is fourthcoming.
 
 ### Documentation and Examples
 
-The [Greenwood](https://github.com/cjunkermeier/greenwood/wiki/Greenwood:-A-Clojure-library-for-creating-molecular-models-and-processing-molecular-dynamics-simulations.) WIKI contains documentation and examples of use.
+The **Greenwood** [WIKI](https://github.com/cjunkermeier/greenwood/wiki/Greenwood:-A-Clojure-library-for-creating-molecular-models-and-processing-molecular-dynamics-simulations.) contains documentation and examples of use.
