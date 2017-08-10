@@ -22,7 +22,7 @@
 (Ry->eV (cmato/- -3331.31268534  -3331.321586419))
 
 (defn kcalpermol->eV [x] (cmato/* x 0.04336))
-(defn eV->kcalpermol [x] (cmato// x 0.04336))
+(defn eV->kcalpermol [x] (cmato/* x 23.06035))
 
 (defn Ry->kcalpermol [x] (eV->kcalpermol (Ry->eV x)))
 

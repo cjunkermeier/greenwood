@@ -32,7 +32,9 @@
 the PDB or CrystalMaker format, it is only the parts that I needed in a
 particular project.")
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CrystalMaker Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn commutative-cartesian-product
   "This produces a set of elements, similar to the cartesian product on two
@@ -121,6 +123,9 @@ write out all combinations of atom species."
     "XYZR  -1.5 1.5 -1.5 1.5 -1.5 1.5" utils/endline
     (write-cmtx-ATOM mol)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Fireball bas Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn write-bas [atoms]
@@ -128,6 +133,9 @@ write out all combinations of atom species."
   (str (count atoms)  utils/endline (utils/inter-cat-tree [utils/endline "   "] (get-atoms atoms true)) utils/endline))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PDB Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (comment "ftp://ftp.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_Letter.pdf")
 
@@ -220,7 +228,7 @@ lattice type symbol used is H."
     (str (strng/join utils/endline (map f mol)) utils/endline)))
 
 
-(defn get-npos
+(defn get-npos-
   "This is a helper function that will create a seq of the :npos of the atoms that are a neighbor to atomm"
   [atomm]
   (loop [n (first (:neigh atomm))
@@ -230,6 +238,11 @@ lattice type symbol used is H."
       m
       (recur (first nn) (rest nn) (conj m (:npos n))))))
 
+
+(defn get-npos-
+  "This is a helper function that will create a seq of the :npos of the atoms that are a neighbor to atomm"
+  [atomm]
+  (map (comp inc :npos) (:neigh atomm)))
 
 
 
@@ -251,7 +264,7 @@ lattice type symbol used is H."
                        (pp/cl-format nil "CONECT~5D~5D" (inc x) a))
                      (= 0 (count y))
                      (pp/cl-format nil "CONECT~5D" (inc x))))]
-    (str (strng/join utils/endline (map #(un-named %1 %2) (iterate inc 0) (map get-npos mol))) utils/endline)))
+    (str (strng/join utils/endline (map #(un-named %1 %2) (iterate inc 0) (map get-npos- mol))) utils/endline)))
 
 
 
@@ -267,7 +280,7 @@ lattice type symbol used is H."
       "AUTHOR    GENERATED IN JMD" utils/endline
       (write-pdb-lat lat-param space-group)
       (write-pdb-HETATM (xyz/atom-pos mol))
-      (write-pdb-connect (xyz/atom-pos mol))
+      ;(write-pdb-connect (xyz/atom-pos mol))
       "END")))
   ([mol]
     (if (nil? ((comp :neigh first) mol))
@@ -280,10 +293,13 @@ lattice type symbol used is H."
       "AUTHOR    GENERATED IN GRNWD"
          utils/endline
       (write-pdb-HETATM (xyz/atom-pos mol))
-      (write-pdb-connect (xyz/atom-pos mol))
+      ;(write-pdb-connect (xyz/atom-pos mol))
       "END"))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; xyz Format  -this is a fuzzy catchall for things that look like xyz format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn write-xyz [timesteps]
@@ -407,38 +423,6 @@ Usage:  Suppose (def test (xyz-str->atoms 'C 0 0 0 \n C 0.3333 0.6667 0')"
 
 
 
-
-(defn lammps-datain
-  [mol lvs]
-  (let [species (set (map :species mol))
-        lc (apply merge (map #(hash-map %1 %2) species (iterate inc 1)))]
-          (str
-            "Input created by CEJ\n\n"
-            (str (count mol) " atoms\n")
-            (str (count species) " atom types\n")
-            utils/endline
-            (str 0 " " (ffirst lvs) " xlo xhi\n")
-            (str 0 " " ((comp second second) lvs) " ylo yhi\n")
-            (str 0 " " ((comp last last) lvs) " zlo zhi\n")
-            utils/endline
-            "Masses\n\n"
-            (strng/join utils/endline (map #(str (lc %) " " ((comp empdata/atomic-mass empdata/atomic-numbers) %) "   #" %) species))
-            utils/endline utils/endline
-            "Atoms\n"
-            utils/endline
-               (strng/join utils/endline
-           (map #(str %1 " "
-                      ((comp lc :species) %2) " 0 "
-                      (strng/join " " (:coordinates %2))) (iterate inc 1) mol)))))
-
-
-
-(defn lammps-NEB-final
-  [mol]
-  (strng/join utils/endline (map #(str %1 " " (strng/join " " (:coordinates %2))) (iterate inc 1) mol)))
-
-
-
 (defn write-jaguar-xyz
   [mol]
   (let [species (map #(str (:species %1) %2) mol (iterate inc 1))]
@@ -484,7 +468,45 @@ and (write-xyz (vector test)) => '2\n\n C 0 0 0 \n C 0.3333 0.6667 0'."
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; LAMMPS datain Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defn lammps-datain
+  [mol lvs]
+  (let [species (set (map :species mol))
+        lc (apply merge (map #(hash-map %1 %2) species (iterate inc 1)))]
+          (str
+            "Input created by CEJ\n\n"
+            (str (count mol) " atoms\n")
+            (str (count species) " atom types\n")
+            utils/endline
+            (str 0 " " (ffirst lvs) " xlo xhi\n")
+            (str 0 " " ((comp second second) lvs) " ylo yhi\n")
+            (str 0 " " ((comp last last) lvs) " zlo zhi\n")
+            utils/endline
+            "Masses\n\n"
+            (strng/join utils/endline (map #(str (lc %) " " ((comp empdata/atomic-mass empdata/atomic-numbers) %) "   #" %) species))
+            utils/endline utils/endline
+            "Atoms\n"
+            utils/endline
+               (strng/join utils/endline
+           (map #(str %1 " "
+                      ((comp lc :species) %2) " 0 "
+                      (strng/join " " (:coordinates %2))) (iterate inc 1) mol)))))
+
+
+
+(defn lammps-NEB-final
+  [mol]
+  (strng/join utils/endline (map #(str %1 " " (strng/join " " (:coordinates %2))) (iterate inc 1) mol)))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; pureMD Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn write-pureMD-lat
   "takes params and outputs a string that is used in the PuReMD input format"

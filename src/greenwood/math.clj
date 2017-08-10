@@ -66,6 +66,7 @@
    mat must be a seq of row vectors, not column vectors"
   (map #(reduce cmato/+ (map cmato/* % vect)) mat))
 
+
 (defn mat-mat-mult [mat1 mat2]
   "Performs matrix matrix multiplication.
    mat1 and mat2 are seqs of row vectors, not column vectors."
@@ -77,7 +78,7 @@
 (defn average
   "computes the average value of a col"
   ^double [v]
-  (cmato// (reduce cmato/+ 0.0 v) (count v)))
+  (cms/mean v))
 
 
 
@@ -462,8 +463,8 @@ This matrix was derived from R_{xz} and R_{xz2z} found at
         z (last somevec)]
   (cond
     (= axis :x) (rotate-vec-2-xaxis x y z)
-    (= axis :y)(rotate-vec-2-yaxis x y z)
-    (= axis :z)(rotate-vec-2-zaxis x y z))))
+    (= axis :y) (rotate-vec-2-yaxis x y z)
+    (= axis :z) (rotate-vec-2-zaxis x y z))))
 
 
 

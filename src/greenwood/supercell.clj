@@ -673,6 +673,22 @@ lattice parameters for mol."
       mol))))
 
 
+(defn define-shift->scell
+  "Like shift->scell this function will determine the shift needed to move
+  a mol to place it within a gulp cell, but instead of moving the mol it
+  will write out the amount it should be shifted."
+  [cell-x-size cell-y-size mol]
+  (let [extrema (gmol/min-max-coordinates mol)
+        mol-size (map #(Math/abs (reduce - %)) (partition 2 extrema))
+        x-shift (- cell-x-size (first mol-size))
+        y-shift (- cell-y-size (second mol-size))]
+    (if (or (neg? x-shift) (neg? y-shift))
+       (throw (Exception. "The mol's size is larger than cell-x/y-size."))
+   (+ (* -1 [(first extrema) (nth extrema 2) 0])
+       [(/ x-shift 2) (/ y-shift 2) 0] ))))
+
+
+
 
 
 (defn multiples

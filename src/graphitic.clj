@@ -59,23 +59,13 @@ the B-N bond length in a sheet is 1.45Å")
   "The honeycomb lattice has a unit cell represented in Fig. 1 by the
 vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
 Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
-  Usage (graphene-primitive-unit-cell 'C' 'C' 2.461)"
+  Usage: (graphene-primitive-unit-cell 'C' 'C' 2.461)"
   [C1 C2 a]
   (hash-map :lvs [(a-one a) (a-two a) [0 0 15]]
    :mol [(basic/new-atom (.intern C1) (* 1/3 (+ (a-one a) (a-two a))) nil nil nil nil 0)
 	(basic/new-atom (.intern C2) (* 2/3 (+ (a-one a) (a-two a))) nil nil nil nil 1)]))
 
 
-#_(def ggggrr (graphene-primitive-unit-cell "C" "C" (* (sqrt 3) 1.4270038 )))
-
-
-#_(def b (gutils/transpose (map :coordinates (gmol/rotate-mol
-     (create-supercell (:mol ggggrr) (computation-projectors (:lvs ggggrr) 3 3 0))
-                   [0 0 0] [0 0 1] (ed/degrees->radians 30)))))
-
-#_(clojure.string/join ", " (last b))
-
-#_(clojure.string/join "\", \"" (take (count (last b)) (repeat "ATOM")))
 
 (defn QE-to-xyz
   "Used with my 2x2 Fgraphene paper."
@@ -320,6 +310,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;; Other Allotropes ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn gamma-graphyne
@@ -328,7 +319,9 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
    c is the C-C bond length of the triple bonds
    n is the number of triple bonds between rings
 
-  (gamma-graphyne 'C 'C 1.42 1.4 1.22 1)"
+(citation: J. Chern. Phys. 87 (11))
+
+ Usage: (gamma-graphyne 'C 'C 1.42 1.4 1.22 1)"
   [species1 species2 a b c n]
   (let [s1 (.intern species1)
         s2 (.intern species2)
@@ -380,6 +373,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   "a is the C-C bond length in the rings
    b is the C-C bond length between a ring carbon and a carbon involved in the triple bonds
    c is the C-C bond length of the triple bonds
+(citation: J. Chern. Phys. 87 (11))
 
   Usage: (beta-graphyne 'C 'C 1.43 1.4 1.2)"
   [species1 species2 a b c]
@@ -430,6 +424,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   "a is the C-C bond length in the rings
    b is the C-C bond length between a ring carbon and a carbon involved in the triple bonds
    c is the C-C bond length of the triple bonds
+(citation: J. Chern. Phys. 87 (11))
 
   Usage: (alpha-graphyne Si 1.417055  1.4 1.244)"
   [species1 a b c]
@@ -554,6 +549,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   "a is the C-C distance
 
   The idea for this comes from: The Open Organic Chemistry Journal, 2011, 5, (Suppl 1-M8) 117-126
+https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
   Usage: (cyclic-3naphthylene 'B 'N 1.485)"
   [species1 species2 a]
@@ -804,7 +800,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
 
-  Usage (Octafunctionalized-Biphenylenes 'C 'C 1.507759  1.366579 1.482894  1.507759) "
+  Usage: (Octafunctionalized-Biphenylenes-type2 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
   [species1 species2 a b c d e f g]
   (let [s1 (.intern species1)
         s2 (.intern species2)
@@ -867,17 +863,6 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-;(use 'JMD.atomic-structure-output)
-
-;(def ggggg (Octafunctionalized-Biphenylenes-type2 "C" "C" 1.507759  1.366579 1.482894  1.507759 1.482894 1.482894 1.482894))
-;(def scggggg (create-supercell (:mol ggggg) (computation-projectors (:lvs  ggggg) 2 1 0)))
-
-;(gneigh/overlapping-atoms scggggg 0.1)
-
-;(spit "/Users/chadjunkermeier/Desktop/graphene.xyz" (write-xyz (:mol ggggg)))
-
-
-;(spit "/Users/chadjunkermeier/Desktop/graphene.xyz" (write-xyz scggggg))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -952,7 +937,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
        rot (fn [p] (gmath/the-rotation-function [0 0 (+ r (last p))] [0 0 0] T (rot-angle p)))
        translation (fn [p] (* (/ (cmat/length (cmat/cross p C)) (cmat/length C)) T))]
     (do (map #(comp (partial println rot-angle) :coordinates) mol)
-    (gmol/update-mol mol :coordinates #(+ (rot %) (translation %))))))
+    (gmol/update-mol :coordinates #(+ (rot %) (translation %))  mol))))
 
 
 
@@ -964,6 +949,8 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         alpha2 (/ ed/tau d)
         mol (primitive-cell-onto-tube n m puc)]
     (flatten (map #(gmol/rotate-mol mol [0 0 0] T (* alpha2 %)) (range 1 (inc d))))))
+
+
 
 
 
@@ -994,9 +981,11 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-(defn create-nanotube
+#_(defn create-nanotube-fast
   "This uses the method of Carter White, doi = {10.1103/PhysRevB.47.5485} to
-  create a simple nanotube.  This is the best method to use for creating simple nanotubes."
+  create a simple nanotube.  This is the best method to use for creating simple nanotubes.
+
+  When moving from pre-release greenwood to greenwood this function broke."
   [n m puc]
   (let [[a1 a2 z] (:lvs puc)
         h (create-ring n m puc)
@@ -1007,9 +996,11 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
     (do (println (natoms-nanotube n m puc))
     (hash-map :lvs
     [[1000 0 0] [0 1000 0] [0 0 (cmat/length T)]]
-  :mol (-> (flatten [h (map #((scrw %) h) (range 1 mm))])
-    (gmol/apply-coord-transform-matrix  (gmath/rotate-vec-to-axis T :z))
+  :mol (->> (flatten [h (map #((scrw %) h) (range 1 mm))])
+    (gmol/apply-coord-transform-matrix (gmath/rotate-vec-to-axis T :z))
       (gmol/mol-center ))))))
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1048,6 +1039,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
+
 (defn unrolled-nanotube
   "Creating a flat sheet of graphene (or the like) which can be rolled up to make a
   nanotube. n and m are the normal n and m values used in defining a carbon nanotube.
@@ -1073,7 +1065,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-(defn create-rolled-nanotube
+(defn create-nanotube
   "This is the function to use when you want to create a more complicated nanotube
   (ie. Fgraphene nanotubes, nanotubes made out of biphenylene-carbon).  puc is the
   primitive unit cell (in units of Angstroms) of the structure that is to be rolled
@@ -1092,8 +1084,8 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
                 (gneigh/remove-overlapping 0.4)
                 (gneigh/neighbors 0.1 1.6))
         a (map #(gneigh/nearest-atom-point tube (gmath/mat-vect-mult (gmath/card-rot-mat (* ed/pi %) :y) [0 (* 0.25 (second T)) r] )) [0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.8 1.0])
-        dis (apply max (map #(cmat/length (- (:coordinates %)
-                      (:coordinates (nearest-similar-crystal-point tube %)))) a))
+        dis (- (reduce max (map #(cmat/length (- (:coordinates %)
+                      (:coordinates (nearest-similar-crystal-point tube %)))) a))  0.1)
         p-tube (gmol/mol-filter {:coordinates #(and (>= (second %) 0) (<= (second %) (cmat/abs dis)))} tube)
         tubelvs [C [0 dis 0] (last lvs)]]
     (hash-map :lvs tubelvs :mol (drop-overlapping-sc-atoms p-tube tubelvs 0 1 0))))
@@ -1101,13 +1093,12 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-
-
-
-(defn create-spiral-multiwalled-nanotube
+#_(defn create-spiral-multiwalled-nanotube
   "It has been suggested [26] that the presence of dislocation-like defects in the
   scroll type nanotubes is responsible for the transition from the scroll type to
-  the nested type multiwalled carbon nanotube."
+  the nested type multiwalled carbon nanotube.
+
+  Currently a work in progress."
     [n m puc nx]
   (let [unrolled (unrolled-nanotube n m puc)
         lvs (:lvs unrolled)
@@ -1125,7 +1116,11 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
                       (:coordinates (nearest-similar-crystal-point tube a))))
         p-unrolled (create-supercell
                     (gmol/mol-filter {:coordinates #(and (>= (second %) 0) (<= (second %) (cmat/abs dis)))} (:mol unrolled))
-                    (cell-projectors [C [0 dis 0] (last lvs)] nx 1 1))]))
+                    (cell-projectors [C [0 dis 0] (last lvs)] nx 1 1))]
+
+    ))
+
+
 
 
 
@@ -1151,10 +1146,6 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;; Defects ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;(def ggg (second (make-zigzag-graphene-supercell "C" "C" "C" "C" 1.421 2 2 false)))
-
-
 
 (defn top-site-adsorption
   "gmol is the mol of the graphitic sheet
@@ -1220,20 +1211,6 @@ if you have, and if you haven't it won't optimize, it just spits the mol back ou
 
 
 
-
-
-
-
-#_(defn pre-optimize-neighboring-adatoms
-  [mol species]
-  (let [f #(some (partial = "F") (:nspecies %))
-        F-to-move (gneigh/neighbors (gmol/mol-filter {:species species :neigh f} mol) 0.1 1.8)
-        pairs (mapv #(vector (:pos %) ((comp first :npos :neigh) %)) F-to-move)]
-    (concat (gmol/mol-filter-not {:species species :neigh f} mol)
-            (flatten (map #(first (gmol/resize-bond F-to-move (first %) (second %) (+ 0.3 (cmat/length (gmol/mol-vector F-to-move (first %) (second %)))))) pairs)))))
-
-
-
 (defn pre-optimize-neighboring-adatoms
   [mol species]
   (let [f #(some (partial = "F") (:nspecies %))
@@ -1245,24 +1222,6 @@ if you have, and if you haven't it won't optimize, it just spits the mol back ou
 
 
 
-
-
-(defn make-structuree
-[nxcells nycells proportion job-name ud]
-(let [g (make-zigzag-graphene-supercell "C" "C" "C" "C" 1.421 nxcells nycells false)
-      s (random-topsite-adsorption (second g) (xyz-str->atoms "F 0 0 0") 1/4 1.4 ud)
-      ss (pre-optimize-adatom s "F" [0 0 0.3])]
-(gmol/shift ss [0 0 25])))
-
-
-
-;(pre-optimize-neighboring-adatoms (make-structure 2 1 1/4 "Fred" :two) "F")
-;(use 'JMD.atomic-structure-output)
-
-;(def gstuff (make-structuree 20 10 1/4 "Fred" :two))
-;(spit "/Users/junky/Desktop/graphene.xyz" (write-xyz (pre-optimize-neighboring-adatoms (pre-optimize-neighboring-adatoms gstuff "F") "F")))
-
-;(pre-optimize-neighboring-adatoms gstuff "F")
 
 
 
@@ -1429,6 +1388,11 @@ w-ref, To-ref, and Te = 0."
       (/ (mass mol) (gmath/lvs-volume lvs))))))
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;; Patterning of adsorbates ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (defn middle-half?
   [min-max vectors]
   (let [middle (gmath/midpoint [(first min-max)][(second min-max)])
@@ -1448,7 +1412,40 @@ w-ref, To-ref, and Te = 0."
       (> (first vectors) (+ lower-quartarian cheat-distanceL))
       (< (first vectors) (- higher-quartarian cheat-distanceR)))))
 
+(defn middle-third?
+  [min-max vectors]
+  (let [thir (/ (- (second min-max) (first min-max)) 3.)]
+    (and
+      (> (first vectors) (+ (first min-max) thir))
+      (< (first vectors) (+ (first min-max) thir thir)))))
 
+
+
+(defn four-square?
+    "This function assumes that the graphene sheet is centered at the origin.
+  Usage: (patchwork-supercell graphene-sc CO-sc #(four-square? % ))"
+  [vectors]
+    (or
+      (and (< (first vectors) 0)
+        (< (second vectors) 0))
+      (and (>= (first vectors) 0)
+        (>= (second vectors) 0))))
+
+
+(defn big-circle?
+  "Circle centered at zero with a radius close to the size of the cell."
+  [min-max vectors]
+  (let [min (first (sort (map #(abs (reduce - %))(partition 2 (drop-last 2 min-max)))))]
+    (<= (length vectors) (* min 0.5))))
+
+(defn half-width-circle? [min-max vectors]
+  (let [min (first (sort (map #(abs (reduce - %))(partition 2 (drop-last 2 min-max)))))]
+    (< (length vectors) (* 0.25 min))))
+
+
+(defn quarter-width-circle? [min-max vectors]
+  (let [min (first (sort (map #(abs (reduce - %))(partition 2 (drop-last 2 min-max)))))]
+    (< (length vectors) (* 0.125 min))))
 
 
 

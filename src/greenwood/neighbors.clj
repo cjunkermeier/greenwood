@@ -4,6 +4,7 @@
             [greenwood.mol :as gmol]
             [greenwood.math :as gmath]
             [greenwood.utils :as utils]
+            [clojure.set :as cset]
             [clojure.math.combinatorics :as mathcomb]
             [clojure.core.matrix :as cmat]
             [clojure.core.matrix.operators :as cmato])
@@ -68,8 +69,8 @@ If you run this and you get the error message:
 Then you need to apply xyz-parser/atom-pos to the mol."
    [mol atomm min-distance max-distance]
   (let [neigh-atoms (filter (comp #(and (> max-distance %) (< min-distance %))
-                              #(gmath/euclidean (:coordinates %) (:coordinates atomm))) )
-        neighv (map #(basic/neigh-struct (:pos %) (:species %) (gmath/euclidean (:coordinates %) (:coordinates atomm)) (:coordinates %)))]
+                              #(cmat/distance (:coordinates %) (:coordinates atomm))) )
+        neighv (map #(basic/neigh-struct (:pos %) (:species %) (cmat/distance (:coordinates %) (:coordinates atomm)) (:coordinates %)))]
 (sequence (comp neigh-atoms neighv) mol)))
 
 
@@ -205,7 +206,7 @@ atoms."
   "This allows you to specify the neighbor order from the atom specified by atom-num.
 In this case atom-num is the value of :pos.  This does not take into account
 periodic boundaries.  In order for this to work you will have had to run neighbors
-on mol first."
+on mol first.  This is Manhattan distance used in statistics."
   ([mol atom-num]
     (neighbor-order mol atom-num (cmato/* 2 (count mol))))
   ([mol atom-num maxnum]
@@ -258,6 +259,114 @@ on mol first."
 
 
 
+(defn atom-atom-dipole-moment
+  "This computes the dipole moment of a bond, it assumes that
+   you have charge of each atom."
+  [atom1 atom2]
+  (cmato/* (cmato/- (:charge atom1) (:charge atom2))
+    (cmato/- (:coordinates atom1) (:coordinates atom2))))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn simple-df
+  [min-distance max-distance atom1 atom2]
+  (#(and (> max-distance %) (< min-distance %)) (cmat/distance (:coordinates atom1) (:coordinates atom2))))
+
+
+(defrecord dist-rec [^int pos1 ^double charg1 ^int pos2 ^double charg2  ^doubles dist ])
+(defn dist-struct [pos1 charg1 pos2 charg2 dist]
+  (->dist-rec pos1 charg1 pos2 charg2 dist))
+
+
+
+
+(defn atom-distances
+  "molna is the part of the mol listed after atomm."
+  [df atomm molna]
+    (loop [b (first molna)
+         m (rest molna)
+         v (transient (vector ))]
+    (cond (nil? b) (persistent! v)
+          (false? (df atomm b)) (recur (first m) (rest m) v)
+          (true? (df atomm b)) (recur (first m) (rest m)
+                                  (conj! v (dist-struct (:pos atomm) (:charge atomm)
+                                                    (:pos b) (:charge b)
+                                                    (cmato/- (:coordinates atomm) (:coordinates b))))))))
+
+
+(defn- computation-projectors-
+"This is the same function as is found in greenwood.supercell, I brought this here
+  and made it private so that this name space wouldn't depend on a name space that depends on it."
+  ([la1 ma2 na3]
+    (mathcomb/cartesian-product (concat (range (inc la1)) (range (cmato/- la1) 0))
+      (concat (range (inc ma2)) (range (cmato/- ma2) 0))
+      (concat (range (inc na3)) (range (cmato/- na3) 0))))
+
+  ([lvs la1 ma2 na3]
+    (map #(cmato/+ (cmato/* (first %) (first lvs))
+            (cmato/* (second %) (second lvs))
+            (cmato/* (last %) (last lvs)))
+      (computation-projectors- la1 ma2 na3))))
+
+
+
+(defn s-distances
+  "molna is the part of the mol listed after atomm."
+  ([df mol]
+  (loop [a (first mol)
+         m (rest mol)
+         V (transient (vector ))]
+    (if (empty? m) (flatten (persistent! V))
+          (let [n (atom-distances df a m)]
+            (if (empty?  n)
+              (recur (first m) (rest m) V)
+              (recur (first m) (rest m) (conj! V n)))))))
+  ([df mol lvs]
+  (let [p (flatten (map #(gmol/shift % mol)
+                        (cset/difference (set (computation-projectors- lvs  1 1 0))
+                                         (set [[0.0 0.0 0.0]]))))]
+   (loop [a (first mol)
+         m (rest mol)
+         V (transient [])]
+    (if (empty? m) (flatten (persistent! V))
+          (let [n (atom-distances df a (flatten [m p]))]
+            (if (empty?  n)
+              (recur (first m) (rest m) V)
+              (recur (first m) (rest m) (conj! V n)))))))))
+
+
+
+
+
+#_(defn s-distances
+  "molna is the part of the mol listed after atomm."
+  ([df mol]
+  (loop [a (first mol)
+         m (rest mol)
+         V (transient (vector ))]
+    (if (empty? m) (flatten (persistent! V))
+          (let [n (atom-distances df a m)]
+            (if (empty?  n)
+              (recur (first m) (rest m) V)
+              (recur (first m) (rest m) (conj! V n)))))))
+  ([df mol lvs]
+  (let [p (flatten (map #(gmol/shift % mol)
+                        (cset/difference (set (computation-projectors- lvs  1 1 0))
+                                         (set [[0.0 0.0 0.0]]))))]
+   (loop [a (first mol)
+         m (rest mol)
+         V (transient [])]
+    (if (empty? m) (flatten (persistent! V))
+          (let [n (atom-distances df a (flatten [mol p]))]
+            (if (empty?  n)
+              (recur (first m) (rest m) V)
+              (recur (first m) (rest m) (conj! V n)))))))))
 
 
 
@@ -266,10 +375,36 @@ on mol first."
 
 
 
+(defn dipole-moment
+  ([df mol]
+  (->> (s-distances df mol)
+      (map #(cmato/* (cmato/- (:charg1 %) (:charg2 %))  (:dist %)))
+     (reduce cmato/+ [0.0 0.0 0.0] )))
+  ([df mol lvs]
+  (->> (s-distances df mol lvs)
+      (map #(cmato/* (cmato/- (:charg1 %) (:charg2 %))  (:dist %)))
+     (reduce cmato/+ [0.0 0.0 0.0] ))))
 
 
 
 
 
 
+#_(require '[greenwood.xyz :as xyz])
+#_(def graphene (->> (xyz/foldable-chunks "/Users/chadjunkermeier/Desktop/graphene.xyz" )
+     (r/map (partial xyz/parse-xmolout-readable 5))
+       (into [])
+       (last )))
+
+#_(def dffff (partial simple-df 0.1 1.08))
+
+#_(s-distances dffff (:mol graphene))
+
+#_(dipole-moment  dffff  (:mol graphene) (:lvs graphene))
+
+#_(dipole-moment  dffff  (:mol graphene) )
+
+
+
+;(s-distances dffff (:mol graphene) (:lvs graphene))
 

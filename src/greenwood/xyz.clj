@@ -3,7 +3,7 @@
   chunks using reducers.
 
   Uses iota, which uses mmap()."
-  (:refer-clojure :exclude [* - + == /])
+  ;(:refer-clojure :exclude [* - + == /])
   (:require [clojure.core.reducers :as r]
             [clojure.string :as strng]
             [greenwood.basics :as basic]
@@ -93,12 +93,10 @@ Usage: (atoms-pos mol  5)"
 
 
 
-
 (defn reax-index-timesteps
   [start stop howoften natoms]
- (partition 2 1 (map int (range (cmato/* (cmato// start howoften) (cmato/+ 2 natoms))
-  (cmato/* ((comp inc inc)  (cmato// stop howoften)) (cmato/+ 2 natoms)) (cmato/+ 2 natoms)))))
-
+ (partition 2 1 (map int (range (* (/ start howoften) (+ 2 natoms))
+  (* ((comp inc inc)  (/ stop howoften)) (+ 2 natoms)) (+ 2 natoms)))))
 
 
 
@@ -197,7 +195,7 @@ then the usage would be (xyz-str->atoms test)."
      lines (iterate inc 0))))
 
 
-(defn xyz-iota->atoms_readable
+(defn xyz-iota->atoms-readable
   "This will parse a string into the atoms struct.  Note that the string should start
 with the first atom, not with the number of atoms in the system.  Also, this
 assumes that there is a newline character between atoms.
@@ -301,12 +299,12 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
   ([filename]
   (->> (foldable-chunks filename)
        (r/map (partial drop 2))
-       (r/map xyz-iota->atoms_readable)
+       (r/map xyz-iota->atoms-readable)
        (into [])))
   ([filename charge-column]
   (->> (foldable-chunks filename)
        (r/map (partial drop 2))
-       (r/map (partial xyz-iota->atoms_readable charge-column))
+       (r/map (partial xyz-iota->atoms-readable charge-column))
        (into []))))
 
 
@@ -336,7 +334,7 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
                 (second x)
                 (strng/split x #"[ X]+"))]
   (basic/system (first x)
-          (read-string (second x))
+          (try (read-string (second x)) (catch Exception e (str "Reported time-step is not a number.  Check xmolout file for \"********\"." )))
           (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
           (xyz-reax-iota->atoms (drop 2 lines)))))
   ([charge-column lines]
@@ -344,7 +342,7 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
                 (second x)
                 (strng/split x #"[ X]+"))]
   (basic/system (first x)
-          (read-string (second x))
+          (try (read-string (second x)) (catch Exception e (str "Reported time-step is not a number.  Check xmolout file for \"********\"." )))
           (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
           (xyz-reax-iota->atoms charge-column (drop 2 lines))))))
 
@@ -356,7 +354,7 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
                 (second x)
                 (strng/split x #"[ X]+"))]
   (basic/system (first x)
-          (read-string (second x))
+          (try (read-string (second x)) (catch Exception e (str "Reported time-step is not a number.  Check xmolout file for \"********\"." )))
           (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
           (xyz-reax-iota->atoms-readable (drop 2 lines)))))
   ([charge-column lines]
@@ -364,7 +362,7 @@ to some xyz file, and the charge is given in the 5 column.  The column number st
                 (second x)
                 (strng/split x #"[ X]+"))]
   (basic/system (first x)
-          (read-string (second x))
+          (try (read-string (second x)) (catch Exception e (str "Reported time-step is not a number.  Check xmolout file for \"********\"." )))
           (apply reaxff-cell-params-lvs- (map read-string (drop 3 x)))
           (xyz-reax-iota->atoms-readable charge-column (drop 2 lines))))))
 

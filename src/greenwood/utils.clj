@@ -22,6 +22,7 @@
 ;(defn empty-str [#^String s]
 ;  (= "" (trim s)))
 
+
 (defn dirname
   "Return directory name of path.\n\t(dirname \"a/b/c\") -> \"/a/b\""
   [path]
@@ -156,6 +157,15 @@ list of lists ((48 -6 -6 1) (48 -7 -4 -1))"
         headings (map keyword (strng/split (strng/replace (first data) #":" "") #"\s+"))]
     (apply hash-map (interleave headings ((comp transpose ls-to-ll rest) data)))))
 
+(defn parse-table-new
+  "Parses a table where the first line  of the file is made up of the headings for each column.  This creates a hash-map
+  where each column of the table is an element of the hash-map."
+  [filename]
+  (let [data (clean-parse filename)
+        headings (map keyword (strng/split (strng/replace (first data) #":" "") #"\s+|\t+|\^I"))]
+    (apply hash-map (interleave headings ((comp transpose ls-to-ll rest) data)))))
+
+
 
 (defn parse-table-hash
   "Parses a table where the first line of the file is made up of the headings for each column.  This creates
@@ -163,6 +173,15 @@ list of lists ((48 -6 -6 1) (48 -7 -4 -1))"
   [filename]
   (let [data (clean-parse filename)
         headings (map keyword (strng/split (strng/replace (first data) #":" "") #"\s+"))]
+     (mapv (comp (partial apply hash-map) (partial interleave headings)) ((comp ls-to-ll rest) data))))
+
+
+(defn parse-table-hash-new
+  "Parses a table where the first line of the file is made up of the headings for each column.  This creates
+  a seq of hash-maps."
+  [filename]
+  (let [data (clean-parse filename)
+        headings (map keyword (strng/split (strng/replace (first data) #":" "") #"\s+|\t+|\^I"))]
      (mapv (comp (partial apply hash-map) (partial interleave headings)) ((comp ls-to-ll rest) data))))
 
 
@@ -222,6 +241,14 @@ list of lists ((48 -6 -6 1) (48 -7 -4 -1))"
 (defn txt->LaTeX-table
   [filename]
  (strng/join " \\\\ \n"  (map #(clojure.string/replace % "\t" " & ") (clean-parse filename))))
+
+
+
+(defn hm->LaTeX-table
+  "converts a vector of hash maps into a LaTeX style table."
+  [hm]
+  (inter-cat-tree [" \\\\ \n" " & "]
+          (conj  (map vals hm)  (keys (first hm)))))
 
 
 

@@ -56,7 +56,7 @@ The user while the values of bnot and bnotprime will generally work, I have foun
                :Bnot (nth (:coefs %) 2) :Bnot-prime (nth (:coefs %) 3)
                :rss (:rss %))
      (incopt/non-linear-model Birch-Murnaghan-eqn en-col vol-col [min-en min-lat 4 2]))))
-  ([bnot bnotprime vol-col en-col]
+  ([vol-col en-col bnot bnotprime]
   (let [min-en (apply min en-col)
         where (first (gutil/positions #(= min-en %) en-col))
         min-lat (nth vol-col where)]
@@ -84,7 +84,7 @@ The user while the values of bnot and bnotprime will generally work, I have foun
 -2217.3307
 -2217.3212
 -2217.3092])
-#_(Birch-Murnaghan-EOS 4.2 2 h en)
+#_(Birch-Murnaghan-EOS h en  4 2)
 
 
 (defn polynomial-eqn
