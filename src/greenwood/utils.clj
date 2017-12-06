@@ -325,3 +325,21 @@ against the given value(s) using f."
   [& predicates]
   (combine-p not-every? predicates))
 
+
+
+
+(defn deterministic-shuffle
+"clojure.core/shuffle uses java.util.Collection/shuffle, which takes
+  an optional random number generator.  clojure.core/shuffle does not
+  use this argument, but you could use it to create a variation of
+  shuffle that takes an additional seed value argument, and use that seed
+  value to create a random number generator to pass to  java.util.Collection/shuffle
+
+From: https://stackoverflow.com/questions/14836414/can-i-make-a-deterministic-shuffle-in-clojure"
+  [^java.util.Collection coll seed]
+  (let [al (java.util.ArrayList. coll)
+        rng (java.util.Random. seed)]
+    (java.util.Collections/shuffle al rng)
+    (clojure.lang.RT/vector (.toArray al))))
+
+

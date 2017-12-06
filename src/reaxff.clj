@@ -53,8 +53,7 @@
   ([mol a1 a2]
    (write-bond-restraint mol a1 a2 500 1))
  ([mol a1 a2 distance]
- (let [s "~15A~4D~4D~8,4,0,'*F~8,2,0,'*F~8,5,0,'*F~10,7,0,'*F"
-      dist (distance (:coordinates (nth mol a1)) (:coordinates (nth mol a2)))]
+ (let [s "~15A~4D~4D~8,4,0,'*F~8,2,0,'*F~8,5,0,'*F~10,7,0,'*F"]
       (cpp/cl-format nil s "BOND RESTRAINT" (inc a1) (inc a2) distance  500 1  0.0000000  0  0)))
  ([mol a1 a2 R1 R2]
  (let [s "~15A~4D~4D~8,4,0,'*F~8,2,0,'*F~8,5,0,'*F~10,7,0,'*F"

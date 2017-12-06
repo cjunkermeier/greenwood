@@ -7,6 +7,7 @@
   (:require
    [greenwood.empirical-data :as ged]
    [greenwood.math :as gmath]
+   [greenwood.mol :as gmol]
    [greenwood.neighbors :as gn]
    [greenwood.utils  :as gutil]
         [incanter.core :as inccore ]
@@ -194,8 +195,39 @@ of the volume and energy vectors in the call of this function."
 
 
 
+(defn POAV1-Pyramidalization-Angle
+  "The π-orbital axis vector (POAV) analysis provides a complete description
+  of the electronic structure of nonplanar conjugated organic molecules, and
+  the current interest in fullerenes and carbon nanotubes has led to widespread
+  applica- tion of the POAV method. As may be inferred from the name, the
+  method is based on vector algebra, and the equations necessary to solve for
+  the various quantities of interest (pyramidalization angles, dihedral angles,
+  hybridizations, and resonance integrals) are best handled with a PC and the
+  computer program POAV3.11 The only quantities necessary for this analysis are
+  the atomic coordinates of the atoms in the molecule or fragment. Thus, to
+  solve for the pyramidalization angle and hybridization at a single nonplanar
+  conjugated carbon merely requires the atomic coordinates of the conjugated atom
+  and its three attached atoms (denoted 1, 2, and 3). --Haddon, R. C., 'Comment on
+  the Relationship of the Pyramidalization Angle at a Conjugated Carbon
+  Atom to the sigma Bond Angles.' J. Phys. Chem. A 2001, 105, 4164-4165.
 
+  Usage: (POAV1-Pyramidalization-Angle coronene 1 2 3 4)
 
-
-
+  "
+  [mol conjugatedC C1 C2 C3]
+  (let [B11 (cos (gmol/mol-angle mol [C1 conjugatedC C2]))
+        B12 (cos (gmol/mol-angle mol [C2 conjugatedC C3]))
+        B13 (cos (gmol/mol-angle mol [C3 conjugatedC C1]))
+        B14 (sin (gmol/mol-angle mol [C1 conjugatedC C2]))
+        B20 (/ (- B12 (* B11 B13)) B14)
+        B21 (sqrt (- 1 (* B13 B13) (* B20 B20)))
+        B23 (* -1 B14 B21)
+        B24 (* B14 B21 B14 B21)
+        B25 (* (- 1 B11) (- 1 B11) B21 B21)
+        B26 (** (- (* (- 1 B11) B20) (* B14 (- 1 B13))) 2)
+        B30 (/ B23 (sqrt (+ B24 B25 B26)))      ;cos(theta_sigma.pi)
+        B31 (/ (- B23) (sqrt (+ B24 B25 B26)))  ;cos(theta_sigma.pi)
+        B35 (ged/radians->degrees (acos B30))   ;theta_sigma.pi
+        B36 (ged/radians->degrees (acos B31))]  ;theta_sigma.pi
+      (- B35 90)))
 

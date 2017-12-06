@@ -1055,8 +1055,8 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         rot-mat (gmath/rotate-vec-to-axis chiral :x)
         lvs [(* 1.001 chiral) (* 5.0 T) [0 0 20]]
         cell (define-cell lvs [0 0 -10])]
-       (hash-map :lvs [[LC 0 0] [0 (* 3 LT) 0] [0 0 LC]]
-                 :mol (as-> (create-supercell (:mol puc) (computation-projectors (:lvs puc) 40 40 0)) x
+       (basic/unitcell [[LC 0 0] [0 (* 3 LT) 0] [0 0 LC]]
+                              (as-> (create-supercell (:mol puc) (computation-projectors (:lvs puc) 40 40 0)) x
                                     (gmol/mol-filter {:coordinates (partial within-cell? cell)} x)
                                     (atom-pos x)
                                     (gmol/apply-coord-transform-matrix rot-mat x)))))
@@ -1141,11 +1141,70 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
   (hash-map :lvs [C [0 dis 0] (last lvs)] :mol tube)))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;; turbostratic stacking ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#_(defn mn->theta
+"I found this in 'Bending modes, elastic constants and mechanical stability of graphitic systems' by G. Savini, Y.J. Dappe, S. O ̈ berg, J.-C. Charlier, M.I. Katsnelson, A. Fasolino.
+For this to work properly they state the condition n>m must hold."
+  [n m]
+  (cond (> n m)
+  (acos
+  (/
+  (+ (* 2 n n) (* 2 n m) (* -1 m m))
+  (+ (* 2 n n) (* 2 n m) (* 2 m m))))
+  :else nil))
 
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;; Defects ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+#_(defn turbostratic-stacking
+    "This assumes a cell structure similar to graphene."
+  [n m h puc1 puc2]
+  (let [chiral (chiral-vector n m puc1)
+        theta (mn->theta n m)
+        rot-mat (gmath/rotate-vec-to-axis chiral :x)
+        lvs [(* (cmat/length chiral) (cmat/normalise (first (:lvs puc1))))
+                        (* (cmat/length chiral) (cmat/normalise (second (:lvs puc1))))
+                        [0 0 10]]
+        avec (* -0.5 (+ ((comp first :lvs) puc1) ((comp second :lvs) puc1)))]
+    (hash-map
+       :puc1
+       (basic/unitcell lvs
+                       (as-> (create-supercell (:mol puc1) (computation-projectors (:lvs puc1) 40 40 0)) x
+                                    (gmol/apply-coord-transform-matrix rot-mat x)
+                                    (gmol/rotate-mol x [0.0 0.0 0.0] [0.0 0.0 1.0] (ed/degrees->radians -30))
+                                    (gmol/shift [0.0 0.0 0.1] x)
+                                    (gmol/mol-filter {:coordinates (partial within-cell?? lvs avec)} x)))
+       :puc2
+       (basic/unitcell lvs
+                        (as-> (create-supercell (:mol puc2) (computation-projectors (:lvs puc1) 40 40 0)) x
+                                    (gmol/apply-coord-transform-matrix rot-mat x)
+                                    (gmol/rotate-mol x [0.0 0.0 0.0] [0.0 0.0 1.0] (* -1 (mn->theta n m)))
+                                    (gmol/rotate-mol x [0.0 0.0 0.0] [0.0 0.0 1.0] (ed/degrees->radians -30))
+                                    (gmol/shift [0.0 0.0 (+ 0.1 h)] x)
+                                    (gmol/mol-filter {:coordinates (partial within-cell?? lvs avec)} x))))))
+
+
+;(def b (turbostratic-stacking 3 2 3.0 a ap))
+
+;(def c  (supercell (:mol b) (:lvs b) 3 3 1))
+
+;(spit "/Users/chadjunkermeier/Desktop/graphene.xyz" (out/write-xyz (:mol c)))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;   Adding defects to a graphene sheet
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn top-site-adsorption
   "gmol is the mol of the graphitic sheet

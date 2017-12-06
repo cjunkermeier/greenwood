@@ -228,21 +228,12 @@ lattice type symbol used is H."
     (str (strng/join utils/endline (map f mol)) utils/endline)))
 
 
-(defn get-npos-
-  "This is a helper function that will create a seq of the :npos of the atoms that are a neighbor to atomm"
-  [atomm]
-  (loop [n (first (:neigh atomm))
-         nn (rest (:neigh atomm))
-         m []]
-    (if (nil? n)
-      m
-      (recur (first nn) (rest nn) (conj m (:npos n))))))
 
 
 (defn get-npos-
   "This is a helper function that will create a seq of the :npos of the atoms that are a neighbor to atomm"
   [atomm]
-  (map (comp inc :npos) (:neigh atomm)))
+  (map  :npos (:neigh atomm)))
 
 
 
@@ -280,7 +271,7 @@ lattice type symbol used is H."
       "AUTHOR    GENERATED IN JMD" utils/endline
       (write-pdb-lat lat-param space-group)
       (write-pdb-HETATM (xyz/atom-pos mol))
-      ;(write-pdb-connect (xyz/atom-pos mol))
+      (write-pdb-connect (xyz/atom-pos mol))
       "END")))
   ([mol]
     (if (nil? ((comp :neigh first) mol))
@@ -293,7 +284,7 @@ lattice type symbol used is H."
       "AUTHOR    GENERATED IN GRNWD"
          utils/endline
       (write-pdb-HETATM (xyz/atom-pos mol))
-      ;(write-pdb-connect (xyz/atom-pos mol))
+      (write-pdb-connect (xyz/atom-pos mol))
       "END"))))
 
 

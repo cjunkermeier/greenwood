@@ -7,6 +7,7 @@
                  [org.clojure/math.combinatorics "0.1.1"]
                  [net.mikera/core.matrix "0.44.0"]
                  [net.mikera/vectorz-clj "0.29.0"]
+                  [ubergraph "0.4.0"]
     [incanter/incanter "1.9.0"]
                  [iota "1.1.3"]
                   [criterium "0.4.3"]

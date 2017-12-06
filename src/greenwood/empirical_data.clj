@@ -34,7 +34,7 @@
 
 (defn eV->J [x] (cmato// x 6.24150974E18))
 
-(defn eV->K [x] (cmato/* x 11604.5))
+(defn eV->K [x] (cmato/* x 11604.522))
 
 (defn eA->D [x] (cmato/* x 0.20819434)) ;Debye (D), unit used in dipole moment
 

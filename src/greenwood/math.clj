@@ -546,7 +546,7 @@ pivot, this computes the angle between b1 and b3."
 damn idiots who implemented the IEEE floating point specification."
   ([x y] `(tolerated-eq ~x ~y 0.00001))
   ([x y epsilon]
-    `(<= (abs (cmato/- ~x ~y)) ~epsilon)))
+    `(<= (cmat/abs (cmato/- ~x ~y)) ~epsilon)))
 
 
 
