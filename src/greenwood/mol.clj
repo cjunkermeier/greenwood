@@ -202,18 +202,6 @@ There needs to be the same number of elements in col and mol."
 
 
 
-
-
-#_(defn dfdf
-  ""
-  [keypred keyf mol]
-  (map #(if ((mol-filter-pred- keypred) %)
-          ((fn [x](update-in x [(first keyf)] (second keyf))) %)
-          %) mol))
-
-
-
-
 (defn dfdf
   "Given a mol dfdf associates into the key of keyval the val whenever the predicate of keypred is true.
   Usage: (dfdf {:neigh empty?} {:species 'B'} mol)"
@@ -245,33 +233,8 @@ There needs to be the same number of elements in col and mol."
 
 
 
-
-
-
-
-
+;Does not transduce
 (defn find-assoc-in
-  "Given a vector of maps (or a vector of records),mapvec, this will assoc-in a value,
-  update-val, associated with update-key into a map if the value test-val of the key test-key.
-  Usage: (def aa [{:a 0 :b 0 :c 0} {:a 50 :b 0 :c 0}])
-              (def bb  [50 20])
-              (find-assoc-in [:a :c] bb aa) => ({:a 0 :c 0 :b 0} {:a 50 :c 20 :b 0})"
-  ([[test-key update-key] [test-val update-val] mapvec]
-  (reduce
-   (fn [idx v] (if (= (get-in v [idx test-key]) test-val)
-                   (assoc-in v [idx update-key] update-val)
-                 v))
-   (iterate inc 0)
-   (vec mapvec))))
-
-
-
-
-
-
-
-;This needs to be turned into a transducer
-#_(defn find-assoc-in
   "Given a vector of maps (or a vector of records),mapvec, this will assoc-in a value,
   update-val, associated with update-key into a map if the value test-val of the key test-key.
   Usage: (def aa [{:a 0 :b 0 :c 0} {:a 50 :b 0 :c 0}])
@@ -286,23 +249,6 @@ There needs to be the same number of elements in col and mol."
    (range (count mapvec))))
 
 
-;Does not transduce
-(defn find-assoc-in
-  "Given a vector of maps (or a vector of records),mapvec, this will assoc-in a value,
-  update-val, associated with update-key into a map if the value test-val of the key test-key.
-  Usage: (def aa [{:a 0 :b 0 :c 0} {:a 50 :b 0 :c 0}])
-              (def bb  [50 20])
-              (find-assoc-in [:a :c] bb aa) => ({:a 0 :c 0 :b 0} {:a 50 :c 20 :b 0})"
-  ([[test-key update-key] [test-val update-val] mapvec]
-  (reduce
-   (fn [idx v] (if (= (get-in v [idx test-key]) test-val)
-                   (assoc-in v [idx update-key] update-val)
-                 v))
-   (range (count mapvec))
-   (vec mapvec))))
-
-
-
 
 
 
@@ -314,7 +260,7 @@ There needs to be the same number of elements in col and mol."
   update-val, associated with update-key into a map if the value test-val of the key test-key.
   Usage: (def aa [{:a 10 :b 0 :c 0} {:a 50 :b 0 :c 0}])
               (def bb  [[50 20][10 4]])
-              (find-assoc-in [:a :c] bb aa) => ({:a 4 :c 0 :b 0} {:a 50 :c 20 :b 0})"
+              (find-assoc-in-vec [:a :c] bb aa) => ({:a 10 :c 4 :b 0} {:a 50 :c 20 :b 0})"
   [[test-key update-key] test-update-vals mapvec]
   (loop [f (first test-update-vals)
          r (rest test-update-vals)
@@ -744,11 +690,3 @@ Usage (update-mol-name some-mol some-pred some-name :remove)"
      (r/map xyz-iota->atoms)
      (into [])
             (mols->averaged-mol))
-
-
-
-
-
-
-
-
