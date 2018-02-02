@@ -32,7 +32,7 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 Carbon-hydrogen bonds have a bond length of about 1.09 Å (1.09 × 10-10 m) and a
 bond energy of about 413 kJ/mol.
 
-The carbon–fluorine bond length is typically about 1.35 ångström.  The carbon–fluorine
+The carbon–fluorine bond length is typically about 1.35 Angstrom.  The carbon–fluorine
 bond length varies by several hundredths of an angstrom depending on the hybridization
 of the carbon atom and the presence of other substituents on the carbon or even in atoms
 farther away. These fluctuations can be used as indication of subtle hybridization
@@ -619,26 +619,6 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 
 
-(defn simple-kagome
-  "a is the C-C bond length in the rings
-
-  I don't know if this one will work.
-
-  Usage: (simple-kagome 'C 1.421)"
-  [species1 a]
-  (let [s1 (.intern species1)
-        Auv [1 0 0]
-        Buv [0.5 (* (cmat/sqrt 3.0) 0.5) 0]
-        aa (* 2 a)
-        A (* aa Auv)
-        B (* aa Buv)]
-    (hash-map :lvs [A B [0 0 15]]
-     :mol [(basic/new-atom s1 (* 0.5 (+ A B)) nil nil nil nil 0)
-      (basic/new-atom s1 (* 0.5 A) nil nil nil nil 1)
-      (basic/new-atom s1 (* 0.5 B) nil nil nil nil 2)])))
-
-
-
 (defn kagome
   "a is the C-C bond length in the rings
 
@@ -758,6 +738,39 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
   -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.2013093246767
 
+  Usage (Octafunctionalized-Biphenylenes 'C 1.537659 1.426094 1.409636  1.469558) "
+  [species1 a b c d]
+  (let [aprime d
+        bprime c
+        cprime b
+        dprime a
+        s1 (.intern species1)
+        A [(+ dprime (* 2 bprime (cmat/cos (/ ed/pi 6)))) 0 0]
+        B [0 (+ aprime cprime (* 2 bprime (cmat/sin (/ ed/pi 6)))) 0]
+        atm1 (+ (* 0.5 A) (* 0.5 aprime [0 1 0]))
+        atm2 (+ (* 0.5 dprime [1 0 0]) (* 0.5 B) (* -0.5 cprime [0 1 0]))
+        atm3 (+ atm2 (* 2 bprime (cmat/cos (/ ed/pi 6)) [1 0 0]))
+        atm4 (+ atm2 (* cprime [0 1 0]))
+        atm5 (+ atm3 (* cprime [0 1 0]))
+        atm6 (+ atm1 (* (+ cprime (* 2 bprime (cmat/sin (/ ed/pi 6)))) [0 1 0]))]
+    (hash-map :lvs  [A B [0 0 20]]
+            :mol [(basic/new-atom s1 atm1 nil nil nil nil 1)
+                  (basic/new-atom s1 atm2 nil nil nil nil 2)
+                  (basic/new-atom s1 atm3 nil nil nil nil 3)
+                  (basic/new-atom s1 atm4 nil nil nil nil 4)
+                  (basic/new-atom s1 atm5 nil nil nil nil 5)
+                  (basic/new-atom s1 atm6 nil nil nil nil 6)])))
+
+
+
+
+
+
+(defn Inorganic-Octafunctionalized-Biphenylenes
+  "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+   DOI: 10.1002/ange.2013093246767
+
   Usage (Octafunctionalized-Biphenylenes 'B 'N 1.4995052857142857  1.465623 1.49851875  1.51432575) "
   [species1 species2 a b c d]
   (let [aprime d
@@ -787,8 +800,6 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
                   (basic/new-atom s2 (+ A atm4) nil nil nil nil 10)
                   (basic/new-atom s2 (+ A atm5) nil nil nil nil 11)
                   (basic/new-atom s1 (+ A atm6) nil nil nil nil 12)])))
-
-
 
 
 
@@ -845,7 +856,6 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
                   (basic/new-atom s2 atm10 nil nil nil nil 10)
                   (basic/new-atom s1 atm11 nil nil nil nil 11)
                   (basic/new-atom s2 atm12 nil nil nil nil 12)
-
                   (basic/new-atom s2 atm13 nil nil nil nil 13)
                   (basic/new-atom s1 atm14 nil nil nil nil 14)
                   (basic/new-atom s2 atm15 nil nil nil nil 15)
@@ -861,6 +871,186 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 
 
+
+
+(defn Octafunctionalized-Biphenylenes-type2
+  "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+   DOI: 10.1002/ange.201309324
+
+  Usage: (Octafunctionalized-Biphenylenes-type2 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
+  [species1 species2 a b c d e f g]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        cs (cmat/cos (/ ed/pi 3))
+        sn (cmat/sin (/ ed/pi 3))
+        A [(+ b (* 2 c cs) d) 0.0 0.0]
+        B [0.0 (+ a a (* 2 (+ c c e e g) sn)) 0.0]
+        Aprime [(* 0.5 (+ b (* 2 c cs) d)) (* -0.5 (+ a a (* 2 (+ c c e e g) sn))) 0.0]
+        Bprime [(* 0.5 (+ b (* 2 c cs) d)) (* 0.5 (+ a a (* 2 (+ c c e e g) sn))) 0.0]
+        atm1 [(* 0.5 b) (* 0.5 a) 0.0]
+        atm13 (+ A [(* -0.5 b) (* 0.5 a) 0.0])
+        atm2 (+ atm1 [(* c cs) (* c sn) 0.0])
+        atm14 (+ atm2 [d 0.0 0.0])
+        atm3 (+ atm2 [(* -1.0 e cs) (* e sn) 0.0])
+        atm15 (+ atm14 [(* e cs) (* e sn) 0.0])
+        atm4 (+ atm3 [(* g cs) (* g sn) 0.0])
+        atm16 (+ atm4 [f 0.0 0.0])
+        atm5 (+ atm4 [(* -1.0 e cs) (* e sn) 0.0])
+        atm17 (+ atm16 [(* e cs) (* e sn) 0.0])
+        atm6 (+ atm5 [(* c cs) (* c sn) 0.0])
+        atm18 (+ atm6 [b 0.0 0.0])
+        atm7 (+ atm6 [0.0 a 0.0])
+        atm19 (+ atm7 [b 0.0  0.0])
+        atm8 (+ atm7 [(* -1.0 c cs) (* c sn) 0.0])
+        atm9 (+ atm8 [(* e cs) (* e sn) 0.0])
+        atm10 (+ atm9 [(* -1.0 g cs) (* g sn) 0.0])
+        atm21 (+ atm9 [f 0.0 0.0])
+        atm22 (+ atm21 [(* g cs) (* g sn) 0.0])
+        atm20 (+ atm19 [(* c cs) (* c sn) 0.0])
+        atm11 (+ atm10 [(* e cs) (* e sn) 0.0])
+        atm23 (+ atm11 [d 0.0 0.0])
+        atm24 (+ atm23 [(* c cs) (* c sn) 0.0])
+        atm12 (+ atm11 [(* -1.0 c cs) (* c sn) 0.0])]
+     (hash-map :lvs  [Aprime Bprime [0 0 20]]
+            :mol [;(basic/new-atom s1 atm1 nil nil nil nil 1)
+                  ;(basic/new-atom s2 atm2 nil nil nil nil 2)
+                  ;(basic/new-atom s1 atm3 nil nil nil nil 3)
+                  (basic/new-atom s2 atm4 nil nil nil nil 4)
+                  (basic/new-atom s1 atm5 nil nil nil nil 5)
+                  (basic/new-atom s2 atm6 nil nil nil nil 6)
+                  (basic/new-atom s1 atm7 nil nil nil nil 7)
+                  (basic/new-atom s2 atm8 nil nil nil nil 8)
+                  (basic/new-atom s1 atm9 nil nil nil nil 9)
+                  ;(basic/new-atom s2 atm10 nil nil nil nil 10)
+                  ;(basic/new-atom s1 atm11 nil nil nil nil 11)
+                  ;(basic/new-atom s2 atm12 nil nil nil nil 12)
+                  ;(basic/new-atom s2 atm13 nil nil nil nil 13)
+                  ;(basic/new-atom s1 atm14 nil nil nil nil 14)
+                  ;(basic/new-atom s2 atm15 nil nil nil nil 15)
+                  (basic/new-atom s1 atm16 nil nil nil nil 16)
+                  (basic/new-atom s2 atm17 nil nil nil nil 17)
+                  (basic/new-atom s1 atm18 nil nil nil nil 18)
+                  (basic/new-atom s2 atm19 nil nil nil nil 19)
+                  (basic/new-atom s1 atm20 nil nil nil nil 20)
+                  (basic/new-atom s2 atm21 nil nil nil nil 21)
+                  ;(basic/new-atom s1 atm22 nil nil nil nil 22)
+                  ;(basic/new-atom s2 atm23 nil nil nil nil 23)
+                  ;(basic/new-atom s1 atm24 nil nil nil nil 24)
+])))
+
+
+
+
+
+
+
+
+
+
+(defn Octafunctionalized-Biphenylenes-type3
+  "From: 'Two dimensional Dirac carbon allotropes from graphene'
+  -by Li-Chun Xu, et al.
+   DOI: 10.1039/c3nr04463g
+
+This is a rectangular cell structure of the primitive cell structure
+given in the net-W function below.
+
+
+  Usage: (Octafunctionalized-Biphenylenes-type3 'C 'C 1.539807 1.415841 1.394072 1.450921 1.436087)"
+  [species1 species2 a b c d e]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        cs (cmat/cos (/ ed/pi 3))
+        sn (cmat/sin (/ ed/pi 3))
+        A [(+ b (* 2 c cs) e) 0.0 0.0]
+        B [0.0 (+ a a (* 2 (+ c c d) sn)) 0.0]
+        atm1  [(* -0.5 b) (*  0.5 a) 0.0]
+        atm2  [(*  0.5 b) (*  0.5 a) 0.0]
+        atm3  [(* -0.5 b) (* -0.5 a) 0.0]
+        atm4  [(*  0.5 b) (* -0.5 a) 0.0]
+        atm5  (+ atm1  [(* -1 cs c) (*    sn c) 0.0])
+        atm6  (+ atm2  [(*    cs c) (*    sn c) 0.0])
+        atm7  (+ atm5  [(*    cs d) (*    sn d) 0.0])
+        atm8  (+ atm6  [(* -1 cs d) (*    sn d) 0.0])
+        atm9  (+ atm7  [(* -1 cs c) (*    sn c) 0.0])
+        atm10 (+ atm8  [(*    cs c) (*    sn c) 0.0])
+        atm11 (+ atm3  [(* -1 cs c) (* -1 sn c) 0.0])
+        atm12 (+ atm4  [(*    cs c) (* -1 sn c) 0.0])
+        atm13 (+ atm11 [(*    cs d) (* -1 sn d) 0.0])
+        atm14 (+ atm12 [(* -1 cs d) (* -1 sn d) 0.0])
+        atm15 (+ atm13 [(* -1 cs c) (* -1 sn c) 0.0])
+        atm16 (+ atm14 [(*    cs c) (* -1 sn c) 0.0])]
+     (hash-map :lvs  [A B [0 0 20]]
+            :mol (gmol/shift (* -0.5 (+ A B))
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s2 atm2 nil nil nil nil 1)
+                  (basic/new-atom s2 atm3 nil nil nil nil 2)
+                  (basic/new-atom s1 atm4 nil nil nil nil 3)
+                  (basic/new-atom s2 atm5 nil nil nil nil 4)
+                  (basic/new-atom s1 atm6 nil nil nil nil 5)
+                  (basic/new-atom s1 atm7 nil nil nil nil 6)
+                  (basic/new-atom s2 atm8 nil nil nil nil 7)
+                  (basic/new-atom s2 atm9 nil nil nil nil 8)
+                  (basic/new-atom s1 atm10 nil nil nil nil 9)
+                  (basic/new-atom s1 atm11 nil nil nil nil 10)
+                  (basic/new-atom s2 atm12 nil nil nil nil 11)
+                  (basic/new-atom s2 atm13 nil nil nil nil 12)
+                  (basic/new-atom s1 atm14 nil nil nil nil 13)
+                  (basic/new-atom s1 atm15 nil nil nil nil 14)
+                  (basic/new-atom s2 atm16 nil nil nil nil 15)]))))
+
+
+
+(defn net-W
+  "From: 'Prediction of a new two-dimensional metallic carbon allotrope'
+  -by Xin-Quan Wang, et al.
+   Phys. Chem. Chem. Phys., 2013, 15:2024
+
+
+  3-D Spacegroup: Cmmm (number 65)
+
+  The origin in this puc is set at the center of the four member ring, thus many of the
+  points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
+
+  Usage: (net-W 'C 'C 1.51695375 1.43764092 1.395370978 1.456896124 1.45869914)"
+  [species1 species2 a b c d e]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        cs (cmat/cos (/ ed/pi 3))
+        sn (cmat/sin (/ ed/pi 3))
+        A [(+ b (* 2 c cs) e) 0.0 0.0]
+        B [0.0 (+ a a (* 2 (+ c c d) sn)) 0.0]
+
+        Aprime (- (* 0.5 A) (* 0.5 B))
+        Bprime (- (+ (* 0.5 A) B) (* 0.5 B))
+
+        atm1  [(* -0.5 b) (*  0.5 a) 0.0]
+        atm2  [(*  0.5 b) (*  0.5 a) 0.0]
+        atm3  [(* -0.5 b) (* -0.5 a) 0.0]
+        atm4  [(*  0.5 b) (* -0.5 a) 0.0]
+        atm5  (+ atm1  [(* -1 cs c) (*    sn c) 0.0])
+        atm6  (+ atm2  [(*    cs c) (*    sn c) 0.0])
+        atm7  (+ atm5  [(*    cs d) (*    sn d) 0.0])
+        atm8  (+ atm6  [(* -1 cs d) (*    sn d) 0.0])
+        atm9  (+ atm7  [(* -1 cs c) (*    sn c) 0.0])
+        atm10 (+ atm8  [(*    cs c) (*    sn c) 0.0])
+        atm11 (+ atm3  [(* -1 cs c) (* -1 sn c) 0.0])
+        atm12 (+ atm4  [(*    cs c) (* -1 sn c) 0.0])
+        atm13 (+ atm11 [(*    cs d) (* -1 sn d) 0.0])
+        atm14 (+ atm12 [(* -1 cs d) (* -1 sn d) 0.0])
+        atm15 (+ atm13 [(* -1 cs c) (* -1 sn c) 0.0])
+        atm16 (+ atm14 [(*    cs c) (* -1 sn c) 0.0])]
+     (hash-map :lvs  [Aprime Bprime [0 0 20]]
+            :mol
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s2 atm2 nil nil nil nil 1)
+                  (basic/new-atom s2 atm3 nil nil nil nil 2)
+                  (basic/new-atom s1 atm4 nil nil nil nil 3)
+                  (basic/new-atom s1 atm7 nil nil nil nil 6)
+                  (basic/new-atom s2 atm8 nil nil nil nil 7)
+                  (basic/new-atom s2 atm13 nil nil nil nil 12)
+                  (basic/new-atom s1 atm14 nil nil nil nil 13)])))
 
 
 
@@ -1505,7 +1695,3 @@ w-ref, To-ref, and Te = 0."
 (defn quarter-width-circle? [min-max vectors]
   (let [min (first (sort (map #(abs (reduce - %))(partition 2 (drop-last 2 min-max)))))]
     (< (length vectors) (* 0.125 min))))
-
-
-
-
