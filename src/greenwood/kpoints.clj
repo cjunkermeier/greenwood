@@ -41,14 +41,28 @@ Usage: (generate-band-kpoints [Gamma K M Gamma] [10 5 8])"
 
 
 
-
 (defn MP-grid
-  "Produces a Monkhorst-Pack grid of Kpoints."
-  [n1 n2 n3 p1 p2 p3]
-  (vec (for [a (map #(+ p1 %)(range 0 1 (/ 1. n1)))
-             b (map #(+ p2 %)(range 0 1 (/ 1. n2)))
-             c (map #(+ p3 %)(range 0 1 (/ 1. n3)))]
-        [a b c])))
+  "Produces a Monkhorst-Pack grid of kpoints in the Brillouin-zone.
+
+Usage:
+  4x4x4 grid centered at the origin:
+    (MP-grid 4 4 4) or
+    (MP-grid 4 4 4 [0.0 0.0 0.0])
+  4x4x4 grid centered at [0.1 0.1 0.1]:
+    (MP-grid 4 4 4 [0.1 0.1 0.1])
+
+  To include the gamma point use odd numbers:
+    (MP-grid 5 7 9)"
+   ([n1 n2 n3]
+    (MP-grid n1 n2 n3 [0.0 0.0 0.0]))
+  ([n1 n2 n3 P]
+       (for [a (take n1 (iterate inc 1))
+             b (take n2 (iterate inc 1))
+             c (take n3 (iterate inc 1))]
+        (+ P [(double (/ (- (* 2 a) n1 1) (* 2 n1)))
+         (double (/ (- (* 2 b) n2 1) (* 2 n2)))
+         (double (/ (- (* 2 c) n3 1) (* 2 n3)))]))))
+
 
 
 
@@ -67,7 +81,3 @@ Usage: (generate-band-kpoints [Gamma K M Gamma] [10 5 8])"
 ;(def K [1/3 1/3 0])
 ;(def M [0.5     0.0     0.0])
 ;(generate-band-kpoints [Gamma K M Gamma] [10 5 8])
-
-
-
-
