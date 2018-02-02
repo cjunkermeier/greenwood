@@ -47,12 +47,21 @@ lvs are the lattice vectors of the primitive unit cell."
     (map scale-vec lvs)))
 
 
-(defn linear-interpolate-supercell
+(defn linear-interpolate-mol
   "Use this to linear interpolate the cartesian coordinates of atoms in mol."
   [mol initial-lvs final-lvs]
   (as-> mol x
    (cartesian->fractional x initial-lvs)
    (fractional->cartesian x final-lvs)))
+
+
+(defn rescale-supercell
+  "Rescales lattice vectors to use for interpolating structures and interpolates
+   the cartesian coordinates of atoms in mol."
+  [puc factor]
+  (b/unitcell
+  (linear-interpolate-mol (:mol puc) (:lvs puc) (scale-lat-vec (:lvs puc) factor))
+  (scale-lat-vec (:lvs puc) factor)))
 
 
 
@@ -724,34 +733,3 @@ lattice parameters for mol."
            (apply multiples (map (comp gmath/round-decimal length first) lvss))
            (apply multiples (map (comp gmath/round-decimal length second) lvss))
            (apply multiples (map (comp gmath/round-decimal length last) lvss))))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
