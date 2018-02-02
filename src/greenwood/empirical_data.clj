@@ -29,6 +29,8 @@
 
 (defn kJpermol->eV [x] (cmato/* x 0.010153795839444585))
 (defn eV->kJpermol [x] (cmato// x 0.010153795839444585))
+(defn kJpermol->kcalpermol [x] ((comp eV->kcalpermol kJpermol->eV) x))
+
 
 (defn J->eV [x] (cmato/* x 6.24150974E18))
 
@@ -212,6 +214,3 @@ Usage: (atomic-weight 5) => 10.811"
 
 (defn atomic-charge [nZ]
   (periodic-charges nZ))
-
-
-
