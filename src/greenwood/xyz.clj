@@ -8,7 +8,7 @@
             [clojure.string :as strng]
             [greenwood.basics :as basic]
             [greenwood.utils :as utils]
-            [greenwood.mol :as jmol]
+            [greenwood.mol :as gmol]
             [clojure.core.matrix :as cmat]
             iota
             [clojure.core.matrix.operators :as cmato]))
@@ -450,7 +450,7 @@ the following would both give the same result (write-xyz test) => '2\n\n C 0 0 0
 (defn parse-geo
 "This is currently not full featured, and will only read in the positions of the atoms."
 [filename]
-  (map #(jmol/col->mol (parse-geo-HETATM- %) :neigh (parse-geo-CONECT- %))
+  (map #(gmol/col->mol (parse-geo-HETATM- %) :neigh (parse-geo-CONECT- %))
     (utils/lazy-chunk-file filename #"BIOGRF|XTLGRF")))
 
 
@@ -480,6 +480,93 @@ Espresso's PW.x program.  As far as I can tell this only works with relaxation r
          #(utils/grep #"\s*[A-Z][a-zA-Z0-9]*([ \t]+)(-*\d+\.\d*[DE]?-?\d*[ \t]*){3}" %)
          strng/split-lines)
     (rest (utils/lazy-chunk-file filename #"ATOMIC_POSITIONS \([alat|bohr|angstrom|crystal]*\)\n"))))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;   MDL Molfile  (.mol)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn- mdl-mol->atoms-
+  "This will parse a string into the atoms struct.  Note that the string should start
+with the first atom, not with the number of atoms in the system.  Also, this
+assumes that there is a newline character between atoms.
+
+"
+  [lines]
+  (mapv (fn [x y] (#(basic/new-atom (.intern (nth % 3)) (cmat/matrix  (map read-string (take 3 %))) nil  nil nil nil y)
+                (strng/split (strng/trim x) #"\s+")))
+                  lines (iterate inc 0)))
+
+
+(defn- mdl-mol->bonds-
+  "This will parse a string into the atoms struct.  Note that the string should start
+with the first atom, not with the number of atoms in the system.  Also, this
+assumes that there is a newline character between atoms.
+
+"
+  [atoms neighlines]
+  (let [fneigh #(vector (first %) (basic/neigh-struct (second %)
+                             (:species (gmol/mol-nth atoms (second %)))
+                             (cmat/length (gmol/mol-vector atoms (first %) (second %)))
+                             (gmol/mol-vector atoms (first %) (second %))))]
+        (->> neighlines
+            (r/map (fn [x](strng/split (strng/triml x) #"\s+")))
+            (r/map (partial take 2))
+            (r/map (partial map (comp dec read-string)))
+            (r/map #(vector % (reverse %)))
+            (into [])
+            (utils/flatten-n 1)
+            (set )
+            (vec )
+            (map fneigh))))
+
+
+
+
+
+
+
+(defn parse-mdl-mol
+  "This function parses the positions and neighbor information of atoms
+in a MDL *.mol file.  The same basic information is contained in *.sdf files.
+Assuming that the *.mol file information is at the beginning of the *.sdf this
+function will parse *.sdf files."
+  [filename]
+  (let [lines (flatten (utils/clean-parse-empty filename))
+        natoms (as-> lines x
+                      (nth x 3)
+                      (strng/split x #"[ X]+")
+                      (first x)
+                      (read-string x))
+        nbonds (as-> lines x
+                      (nth x 3)
+                      (strng/split x #"[ X]+")
+                      (second x)
+                      (read-string x))
+      atomss (mdl-mol->atoms- (take natoms (drop 4 lines)))]
+      (gmol/find-assoc-in-vec [:pos :neigh]
+      (map #(vector (first %) (map second (second %)))
+        (group-by first
+        (mdl-mol->bonds- atomss (take nbonds (drop (+ 4 natoms) lines)))))
+      atomss)))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -523,5 +610,3 @@ Espresso's PW.x program.  As far as I can tell this only works with relaxation r
 (r/map (partial drop 2))
      (r/map xyz-iota->atoms)
      (into []))
-
-
