@@ -3,9 +3,9 @@
 (defn indexed
   "Returns a lazy sequence of [index, item] pairs, where items come
   from 's' and indexes count up from zero.
-  
+
   by Stuart Sierra, http://stuartsierra.com/ from clojure.contrib.seq
-  
+
   (indexed '(a b c d))  =>  ([0 a] [1 b] [2 c] [3 d])"
   [s]
   (map vector (iterate inc 0) s))
@@ -118,4 +118,3 @@ Usage: (between-elements [1 2 3 4 5 6] #(< % 3) #(> % 2)) => (3 4 5 6)"
 
 
 (comment "http://groups.google.com/group/clojure/browse_thread/thread/99b3d792b1d34b56")
-
