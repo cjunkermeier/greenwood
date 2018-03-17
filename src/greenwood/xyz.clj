@@ -9,6 +9,7 @@
             [greenwood.basics :as basic]
             [greenwood.utils :as utils]
             [greenwood.mol :as gmol]
+            [greenwood.math :as gmath]
             [clojure.core.matrix :as cmat]
             iota
             [clojure.core.matrix.operators :as cmato]))
@@ -557,8 +558,106 @@ function will parse *.sdf files."
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  POSCAR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn parse-simple-poscar
+  "Poscars is a file format used by VASP to create specify the
+   lattice coordinates and atomic positions of a system.  This "
+  [filename]
+  (let [lines (flatten (utils/clean-parse-empty filename))
+        lvss (as-> lines x
+                    (second x)
+                    (read-string x))
+        lvs  (as-> lines x
+                    (take 5 x)
+                    (take-last 3 x)
+                    (strng/join " " x)
+                    (strng/split x #"\s")
+                    (map read-string x)
+                    (cmato/* lvss x)
+                    (partition-all 3 3 x))
+        natoms (as-> lines x
+                    (nth x 6)
+                    (read-string x))
+        species (as-> lines x
+                    (nth x 5)
+                    (strng/split x #"\s")
+                    (map read-string x)
+                    (map #(take %1 (repeat (str "S" %2))) x (iterate inc 0))
+                    (flatten x))
+        dircar (as-> lines x
+                    (nth x 7))]
+        (basic/system (first lines) 0  lvs
+        (cond
+             (= dircar "Cartesian")
+             (as-> (drop 8 lines) x
+                   (take natoms x)
+                   (strng/join " " x)
+                   (strng/split x #"\s")
+                   (map read-string x)
+                   (partition-all 3 3 x)
+                   (map #(basic/new-atom %1 %2 nil nil nil nil %3) species x (iterate inc 0)))
+             (= dircar "Direct")
+             (as-> (drop 8 lines) x
+                   (take natoms x)
+                   (strng/join " " x)
+                   (strng/split x #"\s")
+                   (map read-string x)
+                   (partition-all 3 3 x)
+                   (map #(cmato/+ (cmato/* (first %) (first lvs))
+                                 (cmato/* (second %) (second lvs))
+                                 (cmato/* (last %) (last lvs))) x)
+                   (map #(basic/new-atom %1 %2 nil nil nil nil %3) species x (iterate inc 0)))))))
 
 
+(defn parse-simple-poscar-s
+  "Poscars is a file format used by VASP to create specify the
+   lattice coordinates and atomic positions of a system.  This "
+  [filename]
+  (let [lines (flatten (utils/clean-parse-empty filename))
+        lvss (as-> lines x
+                    (second x)
+                    (read-string x))
+        lvs  (as-> lines x
+                    (take 5 x)
+                    (take-last 3 x)
+                    (strng/join " " x)
+                    (strng/split x #"\s")
+                    (map read-string x)
+                    (cmato/* lvss x)
+                    (partition-all 3 3 x))
+        natoms (as-> lines x
+                    (nth x 6)
+                    (read-string x))
+        species (repeat "C")
+        dircar (as-> lines x
+                    (nth x 7))]
+        (utils/serialize
+        (basic/system (first lines) 0 lvs
+        (cond
+             (= dircar "Cartesian")
+             (as-> (drop 8 lines) x
+                   (take natoms x)
+                   (strng/join " " x)
+                   (strng/split x #"\s")
+                   (map read-string x)
+                   (partition-all 3 3 x)
+                   (map #(basic/new-atom %1 %2 nil nil nil nil %3) species x (iterate inc 0)))
+             (= dircar "Direct")
+             (as-> (drop 8 lines) x
+                   (take natoms x)
+                   (strng/join " " x)
+                   (strng/split x #"\s")
+                   (map read-string x)
+                   (partition-all 3 3 x)
+                   (map #(cmato/+ (cmato/* (first %) (first lvs))
+                                 (cmato/* (second %) (second lvs))
+                                 (cmato/* (last %) (last lvs))) x)
+                   (map #(basic/new-atom %1 %2 nil nil nil nil %3) species x (iterate inc 0))))))))
 
 
 
