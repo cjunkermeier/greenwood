@@ -1,5 +1,6 @@
 (ns qe
- (:require [clojure.core.matrix :as cmtx])
+ (:require [clojure.core.matrix :as cmtx]
+   [filters])
  (:use     clojure.core.matrix.operators))
 
 
@@ -32,10 +33,5 @@
 (defn find-band-gap
   "Used with quantum espresso"
   [bands fermienergy]
-  (let [above-below (multi-filter [#(> % fermienergy) #(< % fermienergy)] (flatten bands))]
+  (let [above-below (filters/multi-filter [#(> % fermienergy) #(< % fermienergy)] (flatten bands))]
     (- (apply min (first above-below)) (apply max (second above-below)))))
-
-
-
-
-
