@@ -1,0 +1,5 @@
+exit
+(use 'greenwood.xyz :reload)
+(parse-simple-poscar-s  "/Users/junky/Desktop/graphene.poscars”)
+)
+exit
