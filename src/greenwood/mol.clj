@@ -375,7 +375,6 @@ returning the averages as a new coordinate."
 
 
 
-
 (defn rotate-mol
   "pnt2 and pnt1 are both 3-tuples that define the axis.
 angle is the amount of ration this is a scalar value."

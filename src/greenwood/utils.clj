@@ -69,7 +69,7 @@
 
 (defn serialize
   "This will produce a string from the data in a way that preserves
-its type when read in later."
+its type when read in later.  To read this in later use clojure.core/read-string."
   [data]
   (binding [*print-dup* true] (println-str data)))
 
@@ -341,5 +341,3 @@ From: https://stackoverflow.com/questions/14836414/can-i-make-a-deterministic-sh
         rng (java.util.Random. seed)]
     (java.util.Collections/shuffle al rng)
     (clojure.lang.RT/vector (.toArray al))))
-
-
