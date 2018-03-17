@@ -61,10 +61,14 @@ vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
 Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
   Usage: (graphene-primitive-unit-cell 'C' 'C' 2.461)"
   [C1 C2 a]
-  (hash-map :lvs [(a-one a) (a-two a) [0 0 15]]
+  (hash-map :lvs [(a-one a) (a-two a) [0 0 30]]
    :mol [(basic/new-atom (.intern C1) (* 1/3 (+ (a-one a) (a-two a))) nil nil nil nil 0)
 	(basic/new-atom (.intern C2) (* 2/3 (+ (a-one a) (a-two a))) nil nil nil nil 1)]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; I used these in working with Quantum Espresso
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn QE-to-xyz
@@ -120,17 +124,8 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
   (vector
     [(* 2 a (+ 1 (cmat/cos (/ ed/pi 3)))) 0 0]
 	  [0 (* 2 a (cmat/sin (/ ed/pi 3))) 0]
-	  [0 0 15]))
+	  [0 0 20]))
 
-
-#_(defn armchair-rot
-  [a theta]
-  (let [cell (define-cell (armchair-lvs a))
-        f (partial within-cell? cell)
-        arm (gmol/rotate-mol (gmol/shift-to (armchair-uc a) 0 [0.001 0.001 0.001]) [0 0 0][0 0 1] theta)]
-    (if (every? (comp f :coordinates) arm)
-      arm
-      (throw (Exception. "Atoms fall outside of cell")))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -148,12 +143,14 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 	(basic/new-atom C4 [(* a c) (* a (+ 1.5 s)) 0] nil nil nil nil 1))))
 
 
+
 (defn zigzag-lvs
   [a]
   (vector
     [(* 2 a (cmat/cos (/ ed/pi 6))) 0 0]
 	  [0 (* 2 a (+ 1 (cmat/sin (/ ed/pi 6)))) 0]
-	  [0 0 15]))
+	  [0 0 30]))
+
 
 ;;;;;;;;;;;;;;;;; removing the line of C of the highest y ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn remove-highest-y
@@ -165,45 +162,59 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 
 
 ;;;;;;;;;;;;;;;;; Figuring out how to place H-atoms ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn two-point-unit-vec
          "Creates a unit vector that points from p-one to p-two in cartesian coord."
   [p-one p-two]
-         (cmat/normalise (map - p-two p-one)))
+         (cmat/normalise (- p-two p-one)))
+
 
 
 (defn find-edge-C
   "This determines if an atom is an edge atom."
   [mol]
-  (filter #(>= 2 ((comp count :npos :neigh) %)) mol))
+  (filter #(>= 2 ((comp count  :neigh) %)) mol))
+
+
+(defn find-edge-C-periodic
+  "This determines if an atom is an edge atom."
+  [mol lvs]
+  (as->  (computation-supercell mol lvs 1 1 0) x
+         (:mol x)
+         (atom-pos x)
+         (gneigh/neighbors x 0.1 1.8)
+         (take (count mol) x)
+  (filter #(>= 2 ((comp count :neigh) %)) x)))
+
 
 
 (defn add-bonding-H
   "This works for binding H to graphene."
   [mol atomm]
-  (let [numneigh ((comp count :npos :neigh) atomm)
+  (let [numneigh ((comp count :neigh) atomm)
         cone (:coordinates atomm)
-        ctwo (:coordinates (nth mol ((comp first :npos :neigh) atomm)))
+        ctwo (:coordinates (nth mol ((comp :npos first :neigh) atomm)))
         CH-length 1.09]
     (cond
       (= 1 numneigh)
-      (let [unit-2-rotate (cmat/normalise (map - ctwo cone))
-            newz (map + cone [0 0 1])]
-            (vector (basic/new-atom "H" (map + cone (map (partial * CH-length) (gmath/zrotation (* ed/pi 2/3) unit-2-rotate))) nil nil nil nil nil)
-                      (basic/new-atom "H" (map + cone (map (partial * CH-length) (gmath/zrotation (* ed/pi -2/3) unit-2-rotate))) nil nil nil nil nil)))
-
+      (let [unit-2-rotate (cmat/normalise (- ctwo cone))
+            newz (+ cone [0 0 1])]
+            (vector (basic/new-atom "H" (map + cone (map (partial * CH-length) (gmath/zrotation (* ed/pi 2/3) unit-2-rotate))) nil nil nil nil -1)
+                      (basic/new-atom "H" (map + cone (map (partial * CH-length) (gmath/zrotation (* ed/pi -2/3) unit-2-rotate))) nil nil nil nil -1)))
       (= 2 numneigh)
-      (let [cthree (:coordinates (nth mol ((comp second :npos :neigh) atomm)))]
-        (vector (basic/new-atom "H"
-                       (map + cone (map (partial * CH-length) (two-point-unit-vec (gmath/point-line-intersection ctwo cthree cone) cone))) nil nil nil nil nil)))
-
+      (let [cthree (:coordinates (nth mol ((comp :npos second :neigh) atomm)))]
+         [(basic/new-atom "H" (+ cone (* CH-length (two-point-unit-vec (gmath/point-line-intersection ctwo cthree cone) cone))) nil nil nil nil -1)])
      (< 2 numneigh)
       (println "Atom number " (:pos atomm) "(at coordinates " (:coordinates atomm) ") has more than 2 gneigh/neighbors"))))
 
 
 
 (defn add-H
-  [mol]
+  ([mol]
    (concat mol (flatten (map #(add-bonding-H mol %) (find-edge-C mol)))))
+  ([mol lvs]
+   (concat mol (flatten (map #(add-bonding-H (:mol (computation-supercell mol lvs 1 1 0)) %) (find-edge-C-periodic mol lvs))))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;; NANORIBBONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -215,20 +226,26 @@ Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
 CC-dist is the bond length between neighboring C atoms,
 nxcells is the number of unit cells in the direction of the ribbon,
 nycells is the number of unit cells in the direction perpendicular to the ribbon,
-rtl is a boolean that determins if the C atoms with the largest y-values are discarded"
+rtl is a boolean that determins if the C atoms with the largest y-values are discarded
+
+Usage: (make-armchair-nanoribbon 'C 'C 'C 'C 1.421 2 2 true)
+Usage: (make-armchair-nanoribbon 'C 'C 'C 'C 1.421 2 2 nil)"
 [C1 C2 C3 C4 CC-dist nxcells nycells rtl]
 (let [uclvs (armchair-lvs CC-dist)
          sc (if (true? rtl)
-                (remove-highest-y (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))
-                (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))]
-  (as-> (create-supercell sc
-         (computation-projectors
-           [(map (partial * nxcells) (first uclvs)) [0 100 0][0 0 100]] 1 0 0)) x
+                (remove-highest-y (:mol (supercell (armchair-uc C1 C2 C3 C4 CC-dist)  uclvs nxcells nycells 1)))
+                (:mol (supercell (armchair-uc C1 C2 C3 C4 CC-dist) uclvs nxcells nycells 1)))
+      lvs [(* nxcells (first uclvs)) (+ [0.0 30.0 0.0] (* nycells (second uclvs))) [0.0 0.0 30.0]]]
+  (basic/unitcell lvs
+  (as-> sc x
     (atom-pos x)
     (gneigh/neighbors x 0.1 1.8)
-    (add-H x)
-    (gmol/mol-filter :coordinates #(< 0 (first %)) x)
-    (gmol/mol-filter :coordinates #(> (* nxcells (ffirst uclvs)) (first %)) x))))
+    (add-H x lvs)))))
+
+
+
+
+
 
 
 (defn make-zigzag-nanoribbon
@@ -238,24 +255,29 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
   CC-dist is the bond length between neighboring C atoms,
 nxcells is the number of unit cells in the direction of the ribbon,
 nycells is the number of unit cells in the direction perpendicular to the ribbon,
-rtl is a boolean that determins if the C atoms with the largest y-values are discarded"
+rtl is a boolean that determins if the C atoms with the largest y-values are discarded
+
+Usage: (make-zigzag-nanoribbon 'C 'C 'C 'C 1.421 2 2 true)
+Usage: (make-zigzag-nanoribbon 'C 'C 'C 'C 1.421 2 2 nil)"
 [C1 C2 C3 C4 CC-dist nxcells nycells rtl]
 (let [uclvs (zigzag-lvs CC-dist)
          sc (if (true? rtl)
-               ((comp remove-highest-y remove-highest-y) (create-supercell (zigzag-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))
-               (create-supercell (zigzag-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))]
-  (as-> (create-supercell sc
-         (computation-projectors
-           [(map (partial * nxcells) (first uclvs)) [0 100 0][0 0 100]] 1 0 0)) x
+                (remove-highest-y (:mol (supercell (zigzag-uc C1 C2 C3 C4 CC-dist)  uclvs nxcells nycells 1)))
+                (:mol (supercell (zigzag-uc C1 C2 C3 C4 CC-dist) uclvs nxcells nycells 1)))
+      lvs [(* nxcells (first uclvs)) (+ [0.0 30.0 0.0] (* nycells (second uclvs))) [0.0 0.0 30.0]]]
+  (basic/unitcell lvs
+  (as-> sc x
     (atom-pos x)
     (gneigh/neighbors x 0.1 1.8)
-    (add-H x)
-    (gmol/mol-filter :coordinates #(<= -0.01 (first %)) x)
-    (gmol/mol-filter :coordinates #(> (* nxcells (ffirst uclvs)) (first %)) x))))
+    (add-H x lvs)))))
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;; supercells ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;; graphene supercells ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn make-armchair-graphene-supercell
 "This will make a graphene supercell that runs in the x-direction.
@@ -268,15 +290,12 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 [C1 C2 C3 C4 CC-dist nxcells nycells rtl]
 (let [uclvs (armchair-lvs CC-dist)
          sc (if (true? rtl)
-                (remove-highest-y (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))
-                (create-supercell (armchair-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))]
+                (remove-highest-y (:mol (supercell (armchair-uc C1 C2 C3 C4 CC-dist)  uclvs nxcells nycells 1)))
+                (:mol (supercell (armchair-uc C1 C2 C3 C4 CC-dist) uclvs nxcells nycells 1)))]
   (hash-map :lvs [(map * (first uclvs) (repeat nxcells))
     (map * (second uclvs) (repeat nycells))
     (last uclvs)]
             :mol (atom-pos sc))))
-
-
-
 
 
 
@@ -293,8 +312,8 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 [C1 C2 C3 C4 CC-dist nxcells nycells rtl]
 (let [uclvs (zigzag-lvs CC-dist)
          sc (if (true? rtl)
-               ((comp remove-highest-y remove-highest-y) (create-supercell (zigzag-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))
-               (create-supercell (zigzag-uc C1 C2 C3 C4 CC-dist) (cell-projectors uclvs nxcells nycells 1)))]
+               ((comp remove-highest-y remove-highest-y) (:mol (supercell (zigzag-uc C1 C2 C3 C4 CC-dist)  uclvs nxcells nycells 1)))
+               (:mol (supercell (zigzag-uc C1 C2 C3 C4 CC-dist)  uclvs nxcells nycells 1)))]
   (hash-map :lvs [(map * (first uclvs) (repeat nxcells))
     (map * (second uclvs) (repeat nycells))
     (last uclvs)]
@@ -302,15 +321,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-
-
-
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;; Other Allotropes ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;; Other 2-D Allotropes ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defn gamma-graphyne
@@ -347,7 +358,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         atm10 #(+ atm4 (* -1 (f %) Buv))
         atm11 #(+ atm5 (* -1 (f %) Auv))
         atm12 #(+ atm6 (* (f %) U2))]
-    (hash-map :lvs [A B [0 0 15]]
+    (hash-map :lvs [A B [0 0 30]]
      :mol (flatten [[(basic/new-atom s1 atm1 nil nil nil nil 1)
       (basic/new-atom s2 atm2 nil nil nil nil 2)
       (basic/new-atom s1 atm3 nil nil nil nil 3)
@@ -382,7 +393,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         a1uv [1 0 0]
         a2uv [-0.5 (* (cmat/sqrt 3.0) 0.5) 0]
         abc (+ a a a a b c c)]
-        (hash-map :lvs [[abc 0 0] (* abc a2uv) [0 15 0]]
+        (hash-map :lvs [[abc 0 0] (* abc a2uv) [0 30 0]]
         :mol [(basic/new-atom s1 [(+ a a c) 0 0] nil nil nil nil 0)
          (basic/new-atom s2 (+ [(+ a a c) 0 0] (* a a2uv)) nil nil nil nil 1)
          (basic/new-atom s1 (+ [(+ a a c) 0 0] (* (+ a c) a2uv)) nil nil nil nil 2)
@@ -405,20 +416,6 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-;(use 'JMD.atomic-structure-output)
-
-;(def ggggg (gamma-graphyne "C" "C" 1.417055 1.436959 1.220976  2))
-;(def scggggg (create-supercell (:mol ggggg) (computation-projectors (:lvs  ggggg) 1 1 0)))
-
-;(gneigh/overlapping-atoms scggggg 0.1)
-
-
-;(spit "/Users/chadjunkermeier/Desktop/graphene.xyz" (write-xyz scggggg))
-
-
-
-
-
 
 (defn alpha-graphyne
   "a is the C-C bond length in the rings
@@ -432,7 +429,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         a1uv [(* (cmat/sqrt 3.0) 0.5) -0.5 0]
         a2uv [(* (cmat/sqrt 3.0) 0.5)  0.5 0]
         abc (+ a a a a b c c)
-        lvs [(* abc a1uv) (* abc a2uv) [0 15 0]]]
+        lvs [(* abc a1uv) (* abc a2uv) [0 30 0]]]
         (hash-map :lvs lvs
           [(basic/new-atom s1 (* (* 3 b) (cmat/normalise (+ a1uv a2uv))) nil nil nil nil 0)
            (basic/new-atom s1 (* (* 4 b) (cmat/normalise (+ a1uv a2uv))) nil nil nil nil 1)
@@ -479,7 +476,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         atm10 (- atm9 (* b auv))
         atm12 (- atm3 (* c auv))
         atm11 (- atm12 (* b buv))]
-        (hash-map :lvs  [(* aa auv) (* aa buv) [0 0 15]]
+        (hash-map :lvs  [(* aa auv) (* aa buv) [0 0 30]]
           :mol [(basic/new-atom s2 atm1 nil nil nil nil 0)
            (basic/new-atom s1 atm2 nil nil nil nil 1)
            (basic/new-atom s1 atm3 nil nil nil nil 2)
@@ -494,6 +491,106 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
            (basic/new-atom s2 atm12 nil nil nil nil 11)])))
 
 
+
+
+(defn four-six-carbophene
+  "a is the C-C bond length in the rings
+   b is the C-C bond length between a ring carbon and a carbon involved in the triple bonds
+   c is the C-C bond length of the triple bonds
+
+  The origin in this puc is set at the center of the four member ring, thus many of the
+  points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
+
+  This is called graphenylene in The Open Organic Chemistry Journal, 2011, 5, (Suppl 1-M8) 117-126.
+
+  Usage: (four-six-carbophene 'B 'N  1.485 1.476 1.365  3)"
+  ;[species1 species2 species3 a b c d units]
+  [species1 species2  a b c  units]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        buv (a-two 1.0)
+        auv (a-one 1.0)
+        f1 #(if (odd? %) s1 s2)
+        f2 #(if (odd? %) s2 s1)
+        aa (* (dec units) (+ b c (* 2 a (cmat/cos (/ ed/pi 6))) (* 2 c (cmat/cos (/ ed/pi 3)))))
+        apb (+ (* aa auv) (* aa buv))
+        apb_mag (cmat/normalise  apb)
+        apb_uv (cmat/normalise apb)
+        bma (- (* aa buv) (* aa auv))
+        bma_mag (cmat/normalise  bma)
+        bma_uv (cmat/normalise bma)
+        atm1 (+ (* (* 0.5 (- apb_mag a)) apb_uv)(* (* 0.5 (- b)) bma_uv))
+        atm2 (+ (* (* 0.5 (+ apb_mag a)) apb_uv)(* (* 0.5 (- b)) bma_uv))
+        atm3 (+ (* (* 0.5 (- apb_mag a)) apb_uv)(* (* 0.5 b) bma_uv))
+        atm4 (+ (* (* 0.5 (+ apb_mag a)) apb_uv)(* (* 0.5 b) bma_uv))
+        atm5 (+ atm4 (* c buv))
+        atm8 (+ atm2 (* c auv))
+        atm6 (+ atm5 (* b auv))
+        atm7 (+ atm8 (* b buv))
+        atm9 (- atm1 (* c buv))
+        atm10 (- atm9 (* b auv))
+        atm12 (- atm3 (* c auv))
+        atm11 (- atm12 (* b buv))
+        up  (+ a (* 2 c (cmat/cos (/ ed/pi 6))))
+        xup  (* 2 c (cmat/cos (/ ed/pi 6)))
+        vxup   [0.5000000000000001 0.8660254037844386 0]
+        vbxup   [-0.5000000000000001 0.8660254037844386 0]
+        vxdown [0.5000000000000001 -0.8660254037844386 0]
+        vbxdown [-0.5000000000000001 -0.8660254037844386 0]
+        lvs [(* aa auv) (* aa buv) [0 0 30]]
+        mol (atom-pos (flatten
+          [(basic/new-atom s2 atm1 nil nil nil nil 0)
+           (basic/new-atom s1 atm2 nil nil nil nil 1)
+           (basic/new-atom s1 atm3 nil nil nil nil 2)
+           (basic/new-atom s2 atm4 nil nil nil nil 3)
+           (basic/new-atom s1 atm5 nil nil nil nil 4)
+           (basic/new-atom s2 atm6 nil nil nil nil 5)
+           (basic/new-atom s1 atm7 nil nil nil nil 6)
+           (basic/new-atom s2 atm8 nil nil nil nil 7)
+           (basic/new-atom s1 atm9 nil nil nil nil 8)
+           (basic/new-atom s2 atm10 nil nil nil nil 9)
+           (basic/new-atom s1 atm11 nil nil nil nil 10)
+           (basic/new-atom s2 atm12 nil nil nil nil 11)
+     (map #(vector
+            (basic/new-atom (f2 %) (+ atm2 (* % [up 0 0])) nil nil nil nil 7)
+            (basic/new-atom (f1 %) (+ atm4 (* % [up 0 0])) nil nil nil nil 8)
+            (basic/new-atom (f2 %) (+ atm5 (* % [up 0 0])) nil nil nil nil 9)
+            (basic/new-atom (f1 %) (+ atm6 (* % [up 0 0])) nil nil nil nil 10)
+            (basic/new-atom (f2 %) (+ atm7 (* % [up 0 0])) nil nil nil nil 11)
+            (basic/new-atom (f1 %) (+ atm8 (* % [up 0 0])) nil nil nil nil 12)) (range 1 (dec units)))
+(map #(vector
+       (basic/new-atom (f2 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 7)
+       (basic/new-atom (f1 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 12)) (range 1 (int (Math/ceil (/ units 2)))))
+(map #(vector
+       (basic/new-atom (f2 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 7)
+       (basic/new-atom (f1 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 12)) (range 1 (int (Math/floor (/ units 2)))))
+
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm1  (* % up vbxup)) nil nil nil nil 7)
+       (basic/new-atom (f2 %) (+ atm3  (* % up vbxup)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm9  (* % up vbxup)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm10  (* % up vbxup)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm11  (* % up vbxup)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm12  (* % up vbxup)) nil nil nil nil 12)) (range 1 (int (Math/ceil (/ units 2)))))
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm1  (* % up vbxdown)) nil nil nil nil 7)
+       (basic/new-atom (f2 %) (+ atm3  (* % up vbxdown)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm9  (* % up vbxdown)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm10 (* % up vbxdown)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm11 (* % up vbxdown)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm12 (* % up vbxdown)) nil nil nil nil 12)) (range 1 (int (Math/floor (/ units 2)))))
+]))]
+        (hash-map :lvs lvs
+                  :mol (gmol/shift (* 0.385 (+ (first lvs) (second lvs)))
+                        (add-H mol lvs)))))
 
 
 
@@ -523,7 +620,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
         h3 (* b (cmat/normalise (+ (* -0.45 apb_uv) (* -0.45 bma_uv) (* -0.1 [0 0 1]))))
         h4 (* b (cmat/normalise (+ (* -0.45 apb_uv) (* 0.45 bma_uv) (* 0.1 [0 0 1]))))
         ]
-        (hash-map :lvs  [A B [0 0 20]]
+        (hash-map :lvs  [A B [0 0 30]]
            :mol [(basic/new-atom s1 (- (* 0.5 apb) (* 0.5 a apb_uv)) nil nil nil nil 0)
             (basic/new-atom s2 (+ (* 0.5 apb) (* 0.5 a apb_uv)) nil nil nil nil 1)
             (basic/new-atom s2 (+ (* 0.5 A) (* 0.5 a apb_uv)) nil nil nil nil 2)
@@ -542,7 +639,7 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-
+;(def sclbcaa (shift (* -0.5 (+ ((comp first :lvs) sclbc) ((comp second :lvs) sclbc)))  (:mol sclbc))
 
 
 (defn cyclic-3naphthylene
@@ -565,7 +662,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         U1_uv (cmat/normalise U1)
         U2 (- A B)
         U2_uv (cmat/normalise U2)]
-        (hash-map :lvs  [A B [0 0 20]]
+        (hash-map :lvs  [A B [0 0 30]]
            :mol [(basic/new-atom s1 (+ (* 0.5 U1) (* 0.5 a U1_uv) (* 0.5 a U2_uv)) nil nil nil nil 0)
             (basic/new-atom s2 (+ (* 0.5 U1) (* 0.5 a U1_uv) (* -0.5 a U2_uv)) nil nil nil nil 1)
             (basic/new-atom s2 (+ (* 0.5 U1) (* -0.5 a U1_uv) (* 0.5 a U2_uv)) nil nil nil nil 2)
@@ -610,7 +707,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         cp4 (cmat/cos (/ ed/pi 4))
         A [(+ b (* 2 a cp4)) 0 0]
         B [0 (+ b (* 2 a cp4)) 0]]
-    (hash-map :lvs [A B [0 0 15]]
+    (hash-map :lvs [A B [0 0 30]]
      :mol [(basic/new-atom s1 (+ (* 0.5 A) (* 0.5 b (cmat/normalise B))) nil nil nil nil 0)
       (basic/new-atom s1 (+ (* 0.5 B) (* (+ (* 0.5 b) (* 2 a cp4)) (cmat/normalise A))) nil nil nil nil 1)
       (basic/new-atom s1 (+ (* 0.5 A) (* (+ (* 0.5 b) (* 2 a cp4)) (cmat/normalise B))) nil nil nil nil 2)
@@ -634,7 +731,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         B (* aa Buv)
         ApB (+ A B)
         AmB (cmat/normalise (- A B))]
-    (hash-map :lvs [A B [0 0 15]]
+    (hash-map :lvs [A B [0 0 30]]
      :mol [(basic/new-atom s1 (* 0.5 ApB) nil nil nil nil 0)
       (basic/new-atom s1 (- (* 0.5 ApB) (* c (cmat/normalise A))) nil nil nil nil 1)
       (basic/new-atom s1 (- (* 0.5 ApB) (* (+ c d) (cmat/normalise A))) nil nil nil nil 2)
@@ -685,7 +782,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         ee (cmat/normalise  (- p2 (+ p1 (* -1 a c) (* a apb_uv))))
         ff (cmat/normalise (- (+ p1 (* a c) (* a apb_uv))   (+ p1 (* -1 a c) (* a apb_uv)) ))
         ]
-        (hash-map :lvs  [A B [0 0 20]]
+        (hash-map :lvs  [A B [0 0 30]]
                 :mol [(basic/new-atom s1 (- (* 0.5 apb) (* 0.5 a apb_uv)) nil nil nil nil 0)
                  (basic/new-atom s2 p1 nil nil nil nil 1)
                  (basic/new-atom s1 (+ (* 0.5 apb) (* (+ (* 0.5 a) b b) apb_uv)) nil nil nil nil 2)
@@ -720,7 +817,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         B (* 4 a (cmat/cos (/ ed/pi 6)) (a-two 1.0))
         apb (+ A B)
         apb_uv (cmat/normalise apb)]
-        (hash-map :lvs  [A B [0 0 20]]
+        (hash-map :lvs  [A B [0 0 30]]
             :mol [(basic/new-atom s1 [0 0 0] nil nil nil nil 0)
                  (basic/new-atom s1 (* 0.5 A) nil nil nil nil 1)
                  (basic/new-atom s1 A nil nil nil nil 2)
@@ -753,7 +850,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         atm4 (+ atm2 (* cprime [0 1 0]))
         atm5 (+ atm3 (* cprime [0 1 0]))
         atm6 (+ atm1 (* (+ cprime (* 2 bprime (cmat/sin (/ ed/pi 6)))) [0 1 0]))]
-    (hash-map :lvs  [A B [0 0 20]]
+    (hash-map :lvs  [A B [0 0 30]]
             :mol [(basic/new-atom s1 atm1 nil nil nil nil 1)
                   (basic/new-atom s1 atm2 nil nil nil nil 2)
                   (basic/new-atom s1 atm3 nil nil nil nil 3)
@@ -787,7 +884,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         atm4 (+ atm2 (* cprime [0 1 0]))
         atm5 (+ atm3 (* cprime [0 1 0]))
         atm6 (+ atm1 (* (+ cprime (* 2 bprime (cmat/sin (/ ed/pi 6)))) [0 1 0]))]
-    (hash-map :lvs  [(* 2.0 A) B [0 0 20]]
+    (hash-map :lvs  [(* 2.0 A) B [0 0 30]]
             :mol [(basic/new-atom s1 atm1 nil nil nil nil 1)
                   (basic/new-atom s2 atm2 nil nil nil nil 2)
                   (basic/new-atom s2 atm3 nil nil nil nil 3)
@@ -806,7 +903,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 
 
-(defn Octafunctionalized-Biphenylenes-type2
+(defn Octafunctionalized-Biphenylenes-type2-rectagularsc
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
   -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
@@ -843,7 +940,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         atm23 (+ atm11 [d 0.0 0.0])
         atm24 (+ atm23 [(* c cs) (* c sn) 0.0])
         atm12 (+ atm11 [(* -1.0 c cs) (* c sn) 0.0])]
-     (hash-map :lvs  [A B [0 0 20]]
+     (hash-map :lvs  [A B [0 0 30]]
             :mol [(basic/new-atom s1 atm1 nil nil nil nil 1)
                   (basic/new-atom s2 atm2 nil nil nil nil 2)
                   (basic/new-atom s1 atm3 nil nil nil nil 3)
@@ -912,7 +1009,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
         atm23 (+ atm11 [d 0.0 0.0])
         atm24 (+ atm23 [(* c cs) (* c sn) 0.0])
         atm12 (+ atm11 [(* -1.0 c cs) (* c sn) 0.0])]
-     (hash-map :lvs  [Aprime Bprime [0 0 20]]
+     (hash-map :lvs  [Aprime Bprime [0 0 30]]
             :mol [;(basic/new-atom s1 atm1 nil nil nil nil 1)
                   ;(basic/new-atom s2 atm2 nil nil nil nil 2)
                   ;(basic/new-atom s1 atm3 nil nil nil nil 3)
@@ -981,7 +1078,7 @@ given in the net-W function below.
         atm14 (+ atm12 [(* -1 cs d) (* -1 sn d) 0.0])
         atm15 (+ atm13 [(* -1 cs c) (* -1 sn c) 0.0])
         atm16 (+ atm14 [(*    cs c) (* -1 sn c) 0.0])]
-     (hash-map :lvs  [A B [0 0 20]]
+     (hash-map :lvs  [A B [0 0 30]]
             :mol (gmol/shift (* -0.5 (+ A B))
                  [(basic/new-atom s1 atm1 nil nil nil nil 0)
                   (basic/new-atom s2 atm2 nil nil nil nil 1)
@@ -1041,7 +1138,7 @@ given in the net-W function below.
         atm14 (+ atm12 [(* -1 cs d) (* -1 sn d) 0.0])
         atm15 (+ atm13 [(* -1 cs c) (* -1 sn c) 0.0])
         atm16 (+ atm14 [(*    cs c) (* -1 sn c) 0.0])]
-     (hash-map :lvs  [Aprime Bprime [0 0 20]]
+     (hash-map :lvs  [Aprime Bprime [0 0 30]]
             :mol
                  [(basic/new-atom s1 atm1 nil nil nil nil 0)
                   (basic/new-atom s2 atm2 nil nil nil nil 1)
@@ -1051,6 +1148,89 @@ given in the net-W function below.
                   (basic/new-atom s2 atm8 nil nil nil nil 7)
                   (basic/new-atom s2 atm13 nil nil nil nil 12)
                   (basic/new-atom s1 atm14 nil nil nil nil 13)])))
+
+
+
+
+
+
+
+
+
+
+
+(defn net-W-Cpdos
+  "From: 'Prediction of a new two-dimensional metallic carbon allotrope'
+  -by Xin-Quan Wang, et al.
+   Phys. Chem. Chem. Phys., 2013, 15:2024
+
+
+  3-D Spacegroup: Cmmm (number 65)
+
+  The origin in this puc is set at the center of the four member ring, thus many of the
+  points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
+
+  Usage: (net-W 'Cc 'C 1.51695375 1.43764092 1.395370978 1.456896124 1.45869914)"
+  [species1 species2 a b c d e]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        cs (cmat/cos (/ ed/pi 3))
+        sn (cmat/sin (/ ed/pi 3))
+        A [(+ b (* 2 c cs) e) 0.0 0.0]
+        B [0.0 (+ a a (* 2 (+ c c d) sn)) 0.0]
+
+        Aprime (- (* 0.5 A) (* 0.5 B))
+        Bprime (- (+ (* 0.5 A) B) (* 0.5 B))
+
+        atm1  [(* -0.5 b) (*  0.5 a) 0.0]
+        atm2  [(*  0.5 b) (*  0.5 a) 0.0]
+        atm3  [(* -0.5 b) (* -0.5 a) 0.0]
+        atm4  [(*  0.5 b) (* -0.5 a) 0.0]
+        atm5  (+ atm1  [(* -1 cs c) (*    sn c) 0.0])
+        atm6  (+ atm2  [(*    cs c) (*    sn c) 0.0])
+        atm7  (+ atm5  [(*    cs d) (*    sn d) 0.0])
+        atm8  (+ atm6  [(* -1 cs d) (*    sn d) 0.0])
+        atm9  (+ atm7  [(* -1 cs c) (*    sn c) 0.0])
+        atm10 (+ atm8  [(*    cs c) (*    sn c) 0.0])
+        atm11 (+ atm3  [(* -1 cs c) (* -1 sn c) 0.0])
+        atm12 (+ atm4  [(*    cs c) (* -1 sn c) 0.0])
+        atm13 (+ atm11 [(*    cs d) (* -1 sn d) 0.0])
+        atm14 (+ atm12 [(* -1 cs d) (* -1 sn d) 0.0])
+        atm15 (+ atm13 [(* -1 cs c) (* -1 sn c) 0.0])
+        atm16 (+ atm14 [(*    cs c) (* -1 sn c) 0.0])]
+     (hash-map :lvs  [Aprime Bprime [0 0 30]]
+            :mol
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s1 atm2 nil nil nil nil 1)
+                  (basic/new-atom s1 atm3 nil nil nil nil 2)
+                  (basic/new-atom s1 atm4 nil nil nil nil 3)
+                  (basic/new-atom s2 atm7 nil nil nil nil 4)
+                  (basic/new-atom s2 atm8 nil nil nil nil 5)
+                  (basic/new-atom s2 atm13 nil nil nil nil 6)
+                  (basic/new-atom s2 atm14 nil nil nil nil 7)])))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;; Structures as reported in the literature ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(comment "Above I have endevored to produce functions that will allow the user to create graphitic
+systems that are tailored to their needs, using the proper unit cells.  In this section I am
+including structures that were published elsewhere.  This will both ease the user in comparing their
+results with published results and will allow me to quickly add lots of graphitic structures that
+researchers might find useful, but that I don't necessarily want to program in.")
+
+
+
+(def ZhenhaiWang2015
+  "Structures Phagraphene: A Low-energy Graphene Allotrope composed of 5-6-7 Carbon Rings with Distorted Dirac Cones.")
 
 
 
