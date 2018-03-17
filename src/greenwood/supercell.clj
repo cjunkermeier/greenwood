@@ -57,11 +57,27 @@ lvs are the lattice vectors of the primitive unit cell."
 
 (defn rescale-supercell
   "Rescales lattice vectors to use for interpolating structures and interpolates
-   the cartesian coordinates of atoms in mol."
-  [puc factor]
-  (b/unitcell
-  (linear-interpolate-mol (:mol puc) (:lvs puc) (scale-lat-vec (:lvs puc) factor))
-  (scale-lat-vec (:lvs puc) factor)))
+   the cartesian coordinates of atoms in mol.
+
+Usage for scaling in all directions:
+(rescale-supercell unitcell scaling-factor)
+   or
+(rescale-supercell unitcell scaling-factor true true true)
+
+Usage for scaling in the directions of the first two lattice vectors:
+(rescale-supercell unitcell scaling-factor true true nil) "
+([puc factor]
+    (b/unitcell
+    (scale-lat-vec (:lvs puc) factor)
+    (linear-interpolate-mol (:mol puc) (:lvs puc) (scale-lat-vec (:lvs puc) factor))))
+  ([puc factor scale1 scale2 scale3]
+    (let [slvs (scale-lat-vec (:lvs puc) factor)
+          pslvs [(if scale1 (first slvs) (first (:lvs puc)))
+                 (if scale2 (second slvs) (second (:lvs puc)))
+                 (if scale3 (last slvs) (last (:lvs puc)))]]
+      (b/unitcell
+      pslvs
+      (linear-interpolate-mol (:mol puc) (:lvs puc) pslvs)))))
 
 
 
