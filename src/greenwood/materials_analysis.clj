@@ -134,7 +134,24 @@ of the volume and energy vectors in the call of this function."
         where (first (gutil/positions #(= min-en %) energies))
         min-v (nth volumes where)
         model (incopt/non-linear-model polynomial-eqn energies volumes [min-v min-en 0.00001 1.0 1 1])]
-      (hash-map :ym (/(nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) )))
+      (hash-map :ym (/ (nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) )))
+
+
+(defn young-modulus2
+  "This formulation is taken from the paper:
+  'Equilibrium configuration and continuum elastic properties of finite sized graphene'
+  by C D Reddy, S Rajendran, and K M Liew.  Appearing in Nanotechnology 17 (2006) 864–870
+  (http://iopscience.iop.org/0957-4484/17/3/042).
+  Specifically, we use equations 7 and 11 from this paper."
+   [strains energies]
+    (let [min-en (apply min energies)
+        where (first (gutil/positions #(= min-en %) energies))
+        min-s (nth strains where)
+        model (incopt/non-linear-model polynomial-eqn energies strains [min-s min-en 0.00001 1.0 1 1])]
+      (hash-map :ym (/ (nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) )))
+
+
+
 
 
 
@@ -230,4 +247,3 @@ of the volume and energy vectors in the call of this function."
         B35 (ged/radians->degrees (acos B30))   ;theta_sigma.pi
         B36 (ged/radians->degrees (acos B31))]  ;theta_sigma.pi
       (- B35 90)))
-

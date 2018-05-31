@@ -1041,6 +1041,78 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 
 
+(defn Octafunctionalized-Biphenylenes-type2-Cpdos
+  "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+   DOI: 10.1002/ange.201309324
+
+  I used this function for the special purpose of defining certain carbon atoms differently for doing PDOS calculations in DFTB+.
+
+  Usage: (Octafunctionalized-Biphenylenes-type2-Cpdos 'C 'Cc 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
+  [species1 species2 a b c d e f g]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        cs (cmat/cos (/ ed/pi 3))
+        sn (cmat/sin (/ ed/pi 3))
+        A [(+ b (* 2 c cs) d) 0.0 0.0]
+        B [0.0 (+ a a (* 2 (+ c c e e g) sn)) 0.0]
+        Aprime [(* 0.5 (+ b (* 2 c cs) d)) (* -0.5 (+ a a (* 2 (+ c c e e g) sn))) 0.0]
+        Bprime [(* 0.5 (+ b (* 2 c cs) d)) (* 0.5 (+ a a (* 2 (+ c c e e g) sn))) 0.0]
+        atm1 [(* 0.5 b) (* 0.5 a) 0.0]
+        atm13 (+ A [(* -0.5 b) (* 0.5 a) 0.0])
+        atm2 (+ atm1 [(* c cs) (* c sn) 0.0])
+        atm14 (+ atm2 [d 0.0 0.0])
+        atm3 (+ atm2 [(* -1.0 e cs) (* e sn) 0.0])
+        atm15 (+ atm14 [(* e cs) (* e sn) 0.0])
+        atm4 (+ atm3 [(* g cs) (* g sn) 0.0])
+        atm16 (+ atm4 [f 0.0 0.0])
+        atm5 (+ atm4 [(* -1.0 e cs) (* e sn) 0.0])
+        atm17 (+ atm16 [(* e cs) (* e sn) 0.0])
+        atm6 (+ atm5 [(* c cs) (* c sn) 0.0])
+        atm18 (+ atm6 [b 0.0 0.0])
+        atm7 (+ atm6 [0.0 a 0.0])
+        atm19 (+ atm7 [b 0.0  0.0])
+        atm8 (+ atm7 [(* -1.0 c cs) (* c sn) 0.0])
+        atm9 (+ atm8 [(* e cs) (* e sn) 0.0])
+        atm10 (+ atm9 [(* -1.0 g cs) (* g sn) 0.0])
+        atm21 (+ atm9 [f 0.0 0.0])
+        atm22 (+ atm21 [(* g cs) (* g sn) 0.0])
+        atm20 (+ atm19 [(* c cs) (* c sn) 0.0])
+        atm11 (+ atm10 [(* e cs) (* e sn) 0.0])
+        atm23 (+ atm11 [d 0.0 0.0])
+        atm24 (+ atm23 [(* c cs) (* c sn) 0.0])
+        atm12 (+ atm11 [(* -1.0 c cs) (* c sn) 0.0])]
+     (hash-map :lvs  [Aprime Bprime [0 0 30]]
+            :mol [;(basic/new-atom s1 atm1 nil nil nil nil 1)
+                  ;(basic/new-atom s2 atm2 nil nil nil nil 2)
+                  ;(basic/new-atom s1 atm3 nil nil nil nil 3)
+                  (basic/new-atom s2 atm4 nil nil nil nil 4)
+                  (basic/new-atom s2 atm5 nil nil nil nil 5)
+                  (basic/new-atom s1 atm6 nil nil nil nil 6)
+                  (basic/new-atom s1 atm7 nil nil nil nil 7)
+                  (basic/new-atom s2 atm8 nil nil nil nil 8)
+                  (basic/new-atom s2 atm9 nil nil nil nil 9)
+                  ;(basic/new-atom s2 atm10 nil nil nil nil 10)
+                  ;(basic/new-atom s1 atm11 nil nil nil nil 11)
+                  ;(basic/new-atom s2 atm12 nil nil nil nil 12)
+                  ;(basic/new-atom s2 atm13 nil nil nil nil 13)
+                  ;(basic/new-atom s1 atm14 nil nil nil nil 14)
+                  ;(basic/new-atom s2 atm15 nil nil nil nil 15)
+                  (basic/new-atom s2 atm16 nil nil nil nil 16)
+                  (basic/new-atom s2 atm17 nil nil nil nil 17)
+                  (basic/new-atom s1 atm18 nil nil nil nil 18)
+                  (basic/new-atom s1 atm19 nil nil nil nil 19)
+                  (basic/new-atom s2 atm20 nil nil nil nil 20)
+                  (basic/new-atom s2 atm21 nil nil nil nil 21)
+                  ;(basic/new-atom s1 atm22 nil nil nil nil 22)
+                  ;(basic/new-atom s2 atm23 nil nil nil nil 23)
+                  ;(basic/new-atom s1 atm24 nil nil nil nil 24)
+])))
+
+
+
+
+
 
 
 
@@ -1221,7 +1293,7 @@ given in the net-W function below.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(comment "Above I have endevored to produce functions that will allow the user to create graphitic
+#_(comment "Above I have endevored to produce functions that will allow the user to create graphitic
 systems that are tailored to their needs, using the proper unit cells.  In this section I am
 including structures that were published elsewhere.  This will both ease the user in comparing their
 results with published results and will allow me to quickly add lots of graphitic structures that
@@ -1229,7 +1301,7 @@ researchers might find useful, but that I don't necessarily want to program in."
 
 
 
-(def ZhenhaiWang2015
+#_(def ZhenhaiWang2015
   "Structures Phagraphene: A Low-energy Graphene Allotrope composed of 5-6-7 Carbon Rings with Distorted Dirac Cones.")
 
 
@@ -1409,14 +1481,23 @@ researchers might find useful, but that I don't necessarily want to program in."
 
 
 
-
 (defn unrolled-nanotube
   "Creating a flat sheet of graphene (or the like) which can be rolled up to make a
   nanotube. n and m are the normal n and m values used in defining a carbon nanotube.
   puc is the primitive unit cell (in units of Angstroms) of the structure that is to
   be rolled into a tube.  The puc is a hash-map of :lvs and :mol keyword/values.
   It is assumed that the unit cell is parallelogram of the shape used in the graphene
-  primitive unit cell."
+  primitive unit cell.
+
+  Note that this produces a mol that is larger in the y-direction than what the
+  lvs says, this is to make sure that it works for making nanotubes.  If you wish
+  to use this in creating a 2-D supercell then you will need to run mol-filter to
+  cut it down to just the atoms needed atoms.  For example, if you defined the variable
+  g to be the unrolled nanotube you would used the command:
+
+(gmol/mol-filter {:coordinates (partial sc/within-cell?? (:lvs g) [0 0 0])} (:mol g))
+
+  (n,0) zigzag nanotube, (n,n) armchair nanotube, (n,m) chiral nanotube."
   [n m puc]
   (let [chiral (chiral-vector n m puc)
         LC (cmat/length chiral)
@@ -1426,10 +1507,26 @@ researchers might find useful, but that I don't necessarily want to program in."
         lvs [(* 1.001 chiral) (* 5.0 T) [0 0 20]]
         cell (define-cell lvs [0 0 -10])]
        (basic/unitcell [[LC 0 0] [0 (* 3 LT) 0] [0 0 LC]]
-                              (as-> (create-supercell (:mol puc) (computation-projectors (:lvs puc) 40 40 0)) x
+                              (as-> (computation-supercell (:mol puc)  (:lvs puc) 40 40 0) x
+                                    (:mol x)
                                     (gmol/mol-filter {:coordinates (partial within-cell? cell)} x)
                                     (atom-pos x)
                                     (gmol/apply-coord-transform-matrix rot-mat x)))))
+
+
+
+
+(defn unrolled->parallelopipedsc
+"a"
+ [n m puc]
+ (let [b (unrolled-nanotube n m puc)
+       blvs [(first (:lvs b)) [0 (/ (second (second (:lvs b))) 3.0) 0] (last (:lvs b))]]
+   (basic/unitcell blvs
+   (gmol/mol-filter {:coordinates (partial within-cell?? blvs [0 0 0])} (:mol b)))))
+
+
+
+
 
 
 
@@ -1440,7 +1537,8 @@ researchers might find useful, but that I don't necessarily want to program in."
   (ie. Fgraphene nanotubes, nanotubes made out of biphenylene-carbon).  puc is the
   primitive unit cell (in units of Angstroms) of the structure that is to be rolled
   into a tube.  The puc is a hash-map of :lvs and :mol keyword/values.  It is assumed
-  that the unit cell is parallelogram of the shape used in the graphene primitive unit cell."
+  that the unit cell is parallelogram of the shape used in the graphene primitive unit cell.
+  (n,0) zigzag nanotube, (n,n) armchair nanotube, (n,m) chiral nanotube."
   [n m puc]
   (let [unrolled (unrolled-nanotube n m puc)
         lvs (:lvs unrolled)

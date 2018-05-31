@@ -285,7 +285,7 @@ Usage: (tolerance? 2 1.0E-8) => false
 (defn lvs-volume
   "Given a set of three unit vectors this computes the volume of the unit cell."
   [lvs]
-  (cmat/dot (first lvs) (cmat/cross (second lvs) (last lvs))))
+  (cmat/abs (cmat/dot (first lvs) (cmat/cross (second lvs) (last lvs)))))
 
 
 
@@ -702,16 +702,3 @@ Usage: (tolerated-gte 12.304999999999998 12.306) => true"
         fa (map f v-reals)
         m (apply max (map f v-reals))]
         (map (comp int (partial cmato/* m)) v-reals)))
-
-
-
-
-
-
-
-
-
-
-
-
-

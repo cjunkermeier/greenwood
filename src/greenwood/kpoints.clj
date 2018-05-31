@@ -15,7 +15,7 @@ incrementally moving linearly toward kend, but the col does not contain kend."
     (take (inc n) (iterate #(+ 0.0 changevec %) kstart))))
 
 
-(defn generate-band-kpoints [col-kpoints col-integers]
+(defn generate-band-kpoints
   "This computes the kpoints needed to produce a band structure.  All of the
 kpoints are weighted equally. col-kpoints is a list of the high symmetry kpoints
 in the order that is desired.  col-integers is a list of the number of kpoints
@@ -24,8 +24,13 @@ with the first being the first high symmetry kpoint and the last being the last
 high symmetry kpoint.
 
 Usage: (generate-band-kpoints [Gamma K M Gamma] [10 5 8])"
+
+([col-kpoints col-integers]
+  (generate-band-kpoints col-kpoints col-integers
+                         (/ 1. (+ (count col-kpoints) (reduce + col-integers)))))
+([col-kpoints col-integers weight]
   (if (= (count col-kpoints) (inc (count col-integers)))
-  (let [factor (/ 1. (+ (count col-kpoints) (reduce + col-integers)))
+  (let [factor weight
         endpoints (partition 2 1 col-kpoints)
         kpoint-elements (inc (count (first col-kpoints)))]
     (partition kpoint-elements
@@ -35,7 +40,8 @@ Usage: (generate-band-kpoints [Gamma K M Gamma] [10 5 8])"
           (utils/flatten-n 1
             (map #(generate-middle-kpoints (first %1) %2 (second %1)) endpoints col-integers)) (vector (last col-kpoints)))
         (repeat factor)))))
-    (println "error in calling generate-band-kpoints: (count col-kpoints) should equal (inc (count col-integers))")))
+    (println "error in calling generate-band-kpoints: (count col-kpoints) should equal (inc (count col-integers))"))))
+
 
 
 

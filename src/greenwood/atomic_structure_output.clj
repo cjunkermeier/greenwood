@@ -176,7 +176,8 @@ lattice type symbol used is H."
 
 
 
-(defn write-pdb-HETATM [mol]
+(defn write-pdb-HETATM
+[mol]
   (let [mmol (check-charge- mol)
         f #(pp/cl-format nil "HETATM~5D ~4@<~A~> ~3:<~A~>  ~4D    ~8,3F~8,3F~8,3F~6,2F~6,3F          ~2:<~A~>"
              (inc (:pos %))
@@ -193,7 +194,8 @@ lattice type symbol used is H."
 
 
 
-(defn write-pdb-HETATM [mol]
+(defn write-pdb-HETATM
+[mol]
   (let [mmol (check-charge- mol)
         f #(pp/cl-format nil "HETATM~5D ~4@<~A~> ~3:<~A~>  ~4D    ~8,3F~8,3F~8,3F~6,2F~6,3F          ~2:<~A~>"
              (inc (:pos %))
@@ -212,7 +214,8 @@ lattice type symbol used is H."
 
 
 
-(defn write-pdb-HETATM [mol]
+(defn write-pdb-HETATM
+[mol]
   (let [mmol (check-charge- mol)
         f #(pp/cl-format nil "HETATM~5D ~4@<~A~> ~3:<~A~>  ~4D    ~8,3F~8,3F~8,3F~6,2F~6,2F          ~2:<~A~>"
              (inc (:pos %))
@@ -293,7 +296,8 @@ lattice type symbol used is H."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn write-xyz [timesteps]
+(defn write-xyz
+  [timesteps]
   "Returns a seq of atoms as a string in xyz format.  This version of write-xyz
 allows for writing a whole bunch of time steps (arranged in a col of cols of maps)
 or a single time step which is a col of maps.
@@ -307,7 +311,8 @@ and (write-xyz (vector test)) => '2\n\n C 0 0 0 \n C 0.3333 0.6667 0'."
 
 
 
-(defn write-just-xyz [timesteps]
+(defn write-just-xyz
+  [timesteps]
   "Returns a seq of atoms as a string in xyz format, minus the number of atoms
 being tacked to the front.
 
@@ -536,14 +541,3 @@ do then we sort the mol by :pos."
     (count mol)
      "\n"
      (pureMD-atoms mol))))
-
-
-
-
-
-
-
-
-
-
-

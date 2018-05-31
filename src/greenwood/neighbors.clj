@@ -68,10 +68,27 @@ If you run this and you get the error message:
 #<CompilerException java.lang.IllegalArgumentException: No value supplied for key: clojure.lang.LazySeq@0
 Then you need to apply xyz-parser/atom-pos to the mol."
    [mol atomm min-distance max-distance]
-  (let [neigh-atoms (filter (comp #(and (> max-distance %) (< min-distance %))
+  (let [neigh-atoms (filter (comp #(> max-distance % min-distance)
                               #(cmat/distance (:coordinates %) (:coordinates atomm))) )
         neighv (map #(basic/neigh-struct (:pos %) (:species %) (cmat/distance (:coordinates %) (:coordinates atomm)) (:coordinates %)))]
-(sequence (comp neigh-atoms neighv) mol)))
+(sequence (comp neigh-atoms neighv) (gmol/mol-filter-not {:pos (:pos atomm)} mol))))
+
+
+
+
+
+
+#_(defn neighbors-distances
+  "In this case mol is one time step of the xyz file.
+If you run this and you get the error message:
+#<CompilerException java.lang.IllegalArgumentException: No value supplied for key: clojure.lang.LazySeq@0
+Then you need to apply xyz-parser/atom-pos to the mol."
+   [mol atomm min-distance max-distance]
+  (let [neigh-atoms (fn [x] (filter (comp #(> max-distance % min-distance)
+                              #(cmat/distance (:coordinates %) (:coordinates atomm))) x))
+        neighv (fn [x] (map #(basic/neigh-struct (:pos %) (:species %) (cmat/distance (:coordinates %) (:coordinates atomm)) (:coordinates %)) x))]
+(neigh-atoms (neighv (gmol/mol-filter-not {:pos (:pos atomm)} mol)))))
+
 
 
 
@@ -123,10 +140,16 @@ output is a set of sets, where each of the subsets contains the atoms that are
 too close."
   [mol max-distance]
   (letfn [(listset [x]
-            (let [neighs (:npos (neighbors-distances mol x -0.1 max-distance))]
+            (let [neighs (map :npos (neighbors-distances mol x -0.1 max-distance))]
               (if ((comp not empty?) neighs)
                 (map #(set [(:pos x) %]) neighs))))]
     (remove nil? (set (utils/flatten-n 1 (doall (pmap listset mol)))))))
+
+
+
+
+
+
 
 
 
@@ -407,4 +430,3 @@ on mol first.  This is Manhattan distance used in statistics."
 
 
 ;(s-distances dffff (:mol graphene) (:lvs graphene))
-

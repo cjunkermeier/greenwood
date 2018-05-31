@@ -49,7 +49,7 @@ Usage: (multi-filter [even? odd? zero?] [0 1 2 3 4 5]) => ((0 2 4) (1 3 5) (0))"
 
 
 (defn index-filter
-  "Similar to Clojure’s filter but that returns the indices instead of the
+  "Similar to Clojure’s filter but returns the indices instead of the
 matches themselves. (Programming Clojure, Chapter 2.6, Where is my for loop?
 on page 72)"
   [pred coll]
