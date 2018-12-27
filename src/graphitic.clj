@@ -1242,7 +1242,7 @@ given in the net-W function below.
   The origin in this puc is set at the center of the four member ring, thus many of the
   points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
 
-  Usage: (net-W 'Cc 'C 1.51695375 1.43764092 1.395370978 1.456896124 1.45869914)"
+  Usage: (net-W-Cpdos 'Cc 'C 1.51695375 1.43764092 1.395370978 1.456896124 1.45869914)"
   [species1 species2 a b c d e]
   (let [s1 (.intern species1)
         s2 (.intern species2)
@@ -1491,11 +1491,8 @@ researchers might find useful, but that I don't necessarily want to program in."
 
   Note that this produces a mol that is larger in the y-direction than what the
   lvs says, this is to make sure that it works for making nanotubes.  If you wish
-  to use this in creating a 2-D supercell then you will need to run mol-filter to
-  cut it down to just the atoms needed atoms.  For example, if you defined the variable
-  g to be the unrolled nanotube you would used the command:
-
-(gmol/mol-filter {:coordinates (partial sc/within-cell?? (:lvs g) [0 0 0])} (:mol g))
+  to use this in creating a 2-D supercell then you will need to use them
+  unrolled->parallelopipedsc function.
 
   (n,0) zigzag nanotube, (n,n) armchair nanotube, (n,m) chiral nanotube."
   [n m puc]
@@ -1517,7 +1514,8 @@ researchers might find useful, but that I don't necessarily want to program in."
 
 
 (defn unrolled->parallelopipedsc
-"a"
+"Creates a supercell of a graphitic material where the size and orientation of the supercell
+uses the n and m values used in nanotubes."
  [n m puc]
  (let [b (unrolled-nanotube n m puc)
        blvs [(first (:lvs b)) [0 (/ (second (second (:lvs b))) 3.0) 0] (last (:lvs b))]]
@@ -1795,7 +1793,7 @@ which would allow for irregular surfaces.
 
 #_(defn H-terminated-substitional-defect
   "In order to use this, gneigh/neighbors needs to have been run on mol previous to
-ucmat/sing this command."
+using this command."
   [mol atom num-H]
   (let [C-H-length 1.09
         C-C-length 1.421

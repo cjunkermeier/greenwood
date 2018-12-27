@@ -86,4 +86,8 @@ Usage:
 ;(def Gamma [0 0 0])
 ;(def K [1/3 1/3 0])
 ;(def M [0.5     0.0     0.0])
+;(def X [0.5 0 0])
+;(def Y [0 0.5 0])
+;(def Z [0 0 0.5])
 ;(generate-band-kpoints [Gamma K M Gamma] [10 5 8])
+;(generate-band-kpoints [Gamma X Z Y Gamma Z] [30 30 30 30 30])

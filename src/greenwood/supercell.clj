@@ -65,7 +65,7 @@ Usage for scaling in all directions:
 (rescale-supercell unitcell scaling-factor true true true)
 
 Usage for scaling in the directions of the first two lattice vectors:
-(rescale-supercell unitcell scaling-factor true true nil) "
+(rescale-supercell unitcell scaling-factor true true nil)"
 ([puc factor]
     (b/unitcell
     (scale-lat-vec (:lvs puc) factor)
@@ -154,7 +154,9 @@ for real space coordinates.
 
 This also could be used to make a bigger supercell out of a supercell."
   [mol projectors]
-  (flatten (map #(gmol/shift % mol) projectors)))
+  (xyz/atom-pos
+  (flatten
+  (map #(gmol/shift % mol) projectors))))
 
 
 
@@ -168,7 +170,9 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3]
   (b/unitcell  [(* la1 (first lvs)) (* ma2 (second lvs)) (* na3 (last lvs))]
-             (xyz/atom-pos (flatten (map #(gmol/shift % mol) (cell-projectors lvs la1 ma2 na3))))))
+             (xyz/atom-pos
+             (flatten
+             (map #(gmol/shift % mol) (cell-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -181,7 +185,9 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3]
   (b/unitcell [(* (inc (* 2 la1)) (first lvs)) (* (inc (* 2 ma2)) (second lvs)) (* (inc (* 2 na3)) (last lvs))]
-            (flatten (map #(gmol/shift % mol) (computation-projectors lvs la1 ma2 na3)))))
+            (xyz/atom-pos
+            (flatten
+            (map #(gmol/shift % mol) (computation-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -191,7 +197,9 @@ This also could be used to make a bigger supercell out of a supercell."
 (defn create-filtered-supercell
  "filters atoms out during the creation process, thus using less memory"
  [mol projectors f]
- (flatten (map (comp f #(gmol/shift % mol)) projectors)))
+ (xyz/atom-pos
+  (flatten
+  (map (comp f #(gmol/shift % mol)) projectors))))
 
 
 
@@ -206,7 +214,9 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3 f]
   (b/unitcell  [(* la1 (first lvs)) (* ma2 (second lvs)) (* na3 (last lvs))]
-             (flatten (map (comp f #(gmol/shift % mol)) (cell-projectors lvs la1 ma2 na3)))))
+             (xyz/atom-pos
+             (flatten
+             (map (comp f #(gmol/shift % mol)) (cell-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -221,7 +231,9 @@ for real space coordinates.
 This also could be used to make a bigger supercell out of a supercell."
   [mol lvs la1 ma2 na3 f]
   (b/unitcell [(* (inc (* 2 la1)) (first lvs)) (* (inc (* 2 ma2)) (second lvs)) (* (inc (* 2 na3)) (last lvs))]
-            (flatten (map (comp f #(gmol/shift % mol)) (computation-projectors lvs la1 ma2 na3)))))
+             (xyz/atom-pos
+             (flatten
+             (map (comp f #(gmol/shift % mol)) (computation-projectors lvs la1 ma2 na3))))))
 
 
 

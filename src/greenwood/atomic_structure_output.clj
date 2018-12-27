@@ -320,6 +320,26 @@ Usage:  Suppose (def test (xyz-str->atoms 'C 0 0 0 \n C 0.3333 0.6667 0')"
   (str (utils/inter-cat-tree [utils/endline "   "] (get-atoms timesteps false))))
 
 
+(defn write-xyz-lvs
+  [puc]
+  ""
+  (str  (count (:mol puc)) utils/endline
+        "lvs1 " (apply str (first (:lvs puc)))
+        "     lvs2 " (apply str (second (:lvs puc)))
+        "     lvs3 " (apply str (last (:lvs puc)))
+        utils/endline
+        (str (utils/inter-cat-tree [utils/endline " "] (get-atoms (:mol puc) false)))))
+
+
+(defn write-xyz-lvs
+  [puc]
+  ""
+  (str  (count (:mol puc)) utils/endline
+        "lvs " (utils/inter-cat-tree ["  lvs " " "] (:lvs puc))
+        utils/endline
+        (str (utils/inter-cat-tree [utils/endline " "] (get-atoms (:mol puc) false)))))
+
+
 
 (defn write-xyz-limitdec
   "Returns a seq of atoms as a string in xyz format.  It works just like write-xyz

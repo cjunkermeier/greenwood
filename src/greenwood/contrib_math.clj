@@ -330,3 +330,6 @@ For example, (exact-integer-sqrt 15) is [3 6] because 15 = 3^2+6."
 (defmathfn-1 sin)
 (defmathfn-1 tan)
 
+
+(defn exact-add [& args] (double (apply + (map #(-> % str java.math.BigDecimal.) args))))
+(defn exact-minus [& args] (double (apply - (map #(-> % str java.math.BigDecimal.) args))))
