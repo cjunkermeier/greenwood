@@ -214,7 +214,6 @@ then the usage would be (xyz-str->atoms test)."
 
 
 
-
 (defn xyz-str->atoms
   "This will parse a string into the atoms struct.  Note that the string should start
 with the first atom, not with the number of atoms in the system.  Also, this
@@ -222,11 +221,12 @@ assumes that there is a newline character between atoms.
 
 Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms test)."
-  [string]
+  ([string]
   (let [lines (strng/split-lines string)]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix :double-array  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
-                (strng/split (strng/trim x) #"\s+")))
-                  lines (iterate inc 0))))
+    (xyz-iota->atoms lines)))
+  ([charge-column string]
+    (let [lines (strng/split-lines string)]
+      (xyz-iota->atoms charge-column lines))))
 
 
 (defn xyz-str->atoms-readable
@@ -236,11 +236,13 @@ assumes that there is a newline character between atoms.
 
 Thus if: (def test 'C 0 0 0 \n C 0.3333 0.6667 0')
 then the usage would be (xyz-str->atoms-readable test)."
-  [string]
+  ([string]
   (let [lines (strng/split-lines string)]
-    (mapv (fn [x y] (#(basic/new-atom (.intern (first %)) (cmat/matrix  (map read-string (take 3 (rest %)))) nil  nil nil nil y)
-                (strng/split (strng/trim x) #"\s+")))
-                  lines (iterate inc 0))))
+    (xyz-iota->atoms-readable lines)))
+  ([charge-column string]
+  (let [lines (strng/split-lines string)]
+     (xyz-iota->atoms-readable lines))))
+
 
 
 
