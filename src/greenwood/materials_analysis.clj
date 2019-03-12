@@ -97,7 +97,7 @@ The user while the values of bnot and bnotprime will generally work, I have foun
 
 
 
-(defn polynomial-EOS [vol-col en-col]
+(defn polynomial-EOS
   "This is used to compute the cohesive properties of a material using a
 polynomial equation. The input is a col of lattice volumes (lattice constants),
 vol-col, for the material along with the total energy, en-col, associated with
@@ -108,14 +108,16 @@ in place of lattice volumes, but you will no longer obtain the bulk modulus.
 
 If the output ends up being (NaN NaN NaN NaN) you could have exchanged the potitioning
 of the volume and energy vectors in the call of this function."
-   [vol-col en-col]
-    (let [min-en (apply min en-col)
-        where (first (gutil/positions #(= min-en %) en-col))
-        min-v (nth vol-col where)]
-    (#(hash-map :Enot (second (:coefs %)) :Vnot (first (:coefs %))
-               :rss (:rss %))
-     (incopt/non-linear-model polynomial-eqn en-col vol-col [min-v min-en 0.00001 1.0 1 1]))))
-
+   ([vol-col en-col]
+    (polynomial-EOS vol-col en-col [0.00001 1.0 1 1]))
+([vol-col en-col theta]
+ (let [[c1 c2 c3 c4] theta
+        min-en (apply min en-col)
+     where (first (gutil/positions #(= min-en %) en-col))
+     min-v (nth vol-col where)]
+ (#(hash-map :Enot (second (:coefs %)) :Vnot (first (:coefs %))
+            :rss (:rss %))
+  (incopt/non-linear-model polynomial-eqn en-col vol-col [min-v min-en c1 c2 c3 c4])))))
 
 
 
@@ -139,13 +141,19 @@ of the volume and energy vectors in the call of this function."
   by C D Reddy, S Rajendran, and K M Liew.  Appearing in Nanotechnology 17 (2006) 864–870
   (http://iopscience.iop.org/0957-4484/17/3/042).
   Specifically, we use equations 7 and 11 from this paper."
-   [strains energies]
+   ([strains energies]
     (let [min-en (apply min energies)
         where (first (gutil/positions #(= min-en %) energies))
         min-s (nth strains where)
         model (incopt/non-linear-model polynomial-eqn energies strains [min-s min-en 0.00001 1.0 1 1])]
       (hash-map :ym (/ (nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) )))
-
+   ([strains energies theta]
+    (let [[c1 c2 c3 c4] theta
+        min-en (apply min energies)
+        where (first (gutil/positions #(= min-en %) energies))
+        min-s (nth strains where)
+        model (incopt/non-linear-model polynomial-eqn energies strains [min-s min-en c1 c2 c3 c4])]
+      (hash-map :ym (/ (nth (:coefs model) 2) (first (:coefs model))) :rss (:rss model) ))))
 
 
 
