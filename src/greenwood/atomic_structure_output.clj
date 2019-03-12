@@ -164,13 +164,14 @@ lattice type symbol used is H."
         (apply str (take 5 (first names))))))
 
 
-
 (defn write-bfactor-
        ""
        [atom-from-mol]
-       (if (nil? (:charge atom-from-mol))
-         0
-        ((comp :total :charge) atom-from-mol)))
+       (cond
+          (nil? (:charge atom-from-mol)) 0
+          (map? (:charge atom-from-mol)) ((comp :total :charge) atom-from-mol)
+          (number? (:charge atom-from-mol)) (:charge atom-from-mol)
+          :else 0))
 
 
 
@@ -561,3 +562,20 @@ do then we sort the mol by :pos."
     (count mol)
      "\n"
      (pureMD-atoms mol))))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; FHI-Aims geometry.in Format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn write-FHI-aims-geometryin
+"Returns a seq of atoms as a string in FHI-aims geometry.in file format.
+  I have not included all known functionalites." 
+[mol lvs]
+ (strng/join utils/endline
+  (flatten
+   [(str "lattice_vector " (utils/inter-cat-tree ["\nlattice_vector " " "] lvs))
+    (map #(str "atom " (strng/join " " (:coordinates %)) " " (:species %) ) mol)])))
