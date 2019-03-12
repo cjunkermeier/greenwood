@@ -201,7 +201,6 @@ There needs to be the same number of elements in col and mol."
 
 
 
-
 (defn dfdf
   "Given a mol dfdf associates into the key of keyval the val whenever the predicate of keypred is true.
   Usage: (dfdf {:neigh empty?} {:species 'B'} mol)"
@@ -211,13 +210,13 @@ There needs to be the same number of elements in col and mol."
           %) ))
   ([keypred keyval mol]
   (map #(if ((mol-filter-pred- keypred) %)
-          (assoc-in % [(first keyval)] (second keyval))
+          (assoc-in % (keys keyval) (vals keyval))
           %) mol)))
 
 
 
 
-(defn dfdf
+#_(defn dfdf
   "Given a mol dfdf associates into the key of keyval the val whenever the predicate of keypred is true.
   Usage: (dfdf {:neigh empty?} mol)"
 
