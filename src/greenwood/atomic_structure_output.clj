@@ -423,7 +423,18 @@ Usage:  Suppose (def test (xyz-str->atoms 'C 0 0 0 \n C 0.3333 0.6667 0')"
 
 
 (defn write-dftbplus-xyz-ricardo
-    [mol lvs]
+    ([mol]
+  (let [s (set (map :species mol))
+        lc (apply merge (map #(hash-map %1 %2) s (iterate inc 1)))] ;lc is used to do list comprehension.
+    (strng/join utils/endline
+[" Geometry = {"
+               (str "TypeNames = { "\" (strng/join "\" \"" s) "\" }")
+               "TypesAndCoordinates [Angstrom] = {"
+             (strng/join utils/endline (map #(str (lc (:species %)) " " (strng/join " " (:coordinates %))) mol))
+           " }
+ Periodic = No
+}"])))
+    ([mol lvs]
   (let [s (set (map :species mol))
         lc (apply merge (map #(hash-map %1 %2) s (iterate inc 1)))] ;lc is used to do list comprehension.
     (strng/join utils/endline
@@ -436,8 +447,7 @@ Usage:  Suppose (def test (xyz-str->atoms 'C 0 0 0 \n C 0.3333 0.6667 0')"
  LatticeVectors [Angstrom] = {"
              (utils/inter-cat-tree [utils/endline " "] lvs)
 "  }
-}"])))
-
+}"]))))
 
 
 (defn write-jaguar-xyz
@@ -573,7 +583,7 @@ do then we sort the mol by :pos."
 
 (defn write-FHI-aims-geometryin
 "Returns a seq of atoms as a string in FHI-aims geometry.in file format.
-  I have not included all known functionalites." 
+  I have not included all known functionalites."
 [mol lvs]
  (strng/join utils/endline
   (flatten
