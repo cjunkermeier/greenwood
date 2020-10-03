@@ -284,7 +284,11 @@ on mol first.  This is Manhattan distance used in statistics."
 
 (defn atom-atom-dipole-moment
   "This computes the dipole moment of a bond, it assumes that
-   you have charge of each atom."
+   you have charge of each atom.
+   The bond dipole is modeled as δ+ — δ– with a distance d between
+   the partial charges δ+ and δ–. It is a vector, parallel to the
+   bond axis, pointing from minus to plus,[2] as is conventional
+   for electric dipole moment vectors."
   [atom1 atom2]
   (cmato/* (cmato/- (:charge atom1) (:charge atom2))
     (cmato/- (:coordinates atom1) (:coordinates atom2))))
