@@ -81,6 +81,34 @@ Usage for scaling in the directions of the first two lattice vectors:
 
 
 
+(defn rescale-supercell
+  "Rescales lattice vectors to use for interpolating structures and interpolates
+   the cartesian coordinates of atoms in mol.
+
+Usage for scaling in all directions:
+(rescale-supercell unitcell scaling-factor)
+   or
+(rescale-supercell unitcell scaling-factor true true true)
+
+Usage for scaling in the directions of the first two lattice vectors:
+(rescale-supercell unitcell scaling-factor true true nil)"
+([puc factor]
+    (b/unitcell
+    (scale-lat-vec (:lvs puc) factor)
+    (linear-interpolate-mol (:mol puc) (:lvs puc) (scale-lat-vec (:lvs puc) factor))))
+  ([puc factor scale1 scale2 scale3]
+    (let [slvs (scale-lat-vec (:lvs puc) factor)
+          pslvs [(if scale1 (first slvs) (first (:lvs puc)))
+                 (if scale2 (second slvs) (second (:lvs puc)))
+                 (if scale3 (last slvs) (last (:lvs puc)))]]
+      (assoc puc
+      :lvs pslvs
+      :mol (linear-interpolate-mol (:mol puc) (:lvs puc) pslvs)))))
+
+
+
+
+
 (defn cell-projectors
   "When only the miller indicies are given, [la1 ma2 na3], this computes cell
 projectors for use with a set of atoms coordinates in the crystal (internal)
@@ -187,7 +215,7 @@ This also could be used to make a bigger supercell out of a supercell."
   (b/unitcell [(* (inc (* 2 la1)) (first lvs)) (* (inc (* 2 ma2)) (second lvs)) (* (inc (* 2 na3)) (last lvs))]
             (xyz/atom-pos
             (flatten
-            (map #(gmol/shift % mol) (computation-projectors lvs la1 ma2 na3))))))
+            (pmap #(gmol/shift % mol) (computation-projectors lvs la1 ma2 na3))))))
 
 
 
@@ -617,7 +645,7 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
   expressed as a linear combination of them.  A point lies inside iff all the
   coefficients are positive and are less than lengths of the corresponding sides.
   http://www.mathworks.com/matlabcentral/newsreader/view_thread/292833"
-  [lvs V P]
+  ([lvs V P]
   (let [[A1 A2 A3] (first lvs)
         [B1 B2 B3] (second lvs)
         [C1 C2 C3] (last lvs)
@@ -630,7 +658,11 @@ Usage: (create-surface-cartesian graphene [0 0 0] 50 50 1
         c (/ (+ (* -1 A3 B2 P1) (* A2 B3 P1) (* A3 B1 P2) (* -1 A1 B3 P2) (* -1 A2 B1 P3) (* A1 B2 P3) (* A3 B2 V1) (* -1 A2 B3 V1) (* -1 A3 B1 V2) (* A1 B3 V2) (* A2 B1 V3) (* -1 A1 B2 V3))
            (+ (* -1 A3 B2 C1) (* A2 B3 C1) (* A3 B1 C2) (* -1 A1 B3 C2) (* -1 A2 B1 C3) (* A1 B2 C3)))]
         (every? #(and (gmath/tolerated-gte % 0.0) (gmath/tolerated-gte 1.0 %))  [a b c])))
-
+  ([lvs V ott percent P]
+   (let [lvs1 (if (< ott 1) (* percent (first lvs)) (first lvs))
+         lvs2 (if (< ott 2) (* percent (second lvs)) (second lvs))
+         lvs3 (if (< ott 3) (* percent (last lvs)) (last lvs))]
+         (within-cell?? [lvs1 lvs2 lvs3] V P))))
 
 
 
