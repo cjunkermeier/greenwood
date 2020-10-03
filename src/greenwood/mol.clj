@@ -151,10 +151,17 @@ returns ({:species 8, :coordinates [0 0 0], :name #{:cheesehead}}{:species 1, :c
 
 
 (defn take-mol-by-pos
-  "Given a col containing a listing of the pos to keep, this will select create
+  "Given a col containing a listing of the pos to keep, this will selectively create
 a new mol from the input mol."
   [mol col]
   (flatten (map #(mol-nth mol %) col)))
+
+
+(defn remove-mol-by-pos
+  "Given a col containing a listing of the pos to remove, this will select create
+a new mol from the input mol."
+  [mol col]
+  (vec (cset/difference (set mol) (set (flatten (map #(mol-nth mol %) col))))))
 
 
 
