@@ -16,6 +16,7 @@
             [greenwood.contrib-math :as gcmath]
             [greenwood.basics :as basic]
             [greenwood.utils :as gutils]
+            [greenwood.xyz :as xyz]
 ))
 
 
@@ -493,17 +494,101 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-(defn four-six-carbophene
-  "a is the C-C bond length in the rings
-   b is the C-C bond length between a ring carbon and a carbon involved in the triple bonds
-   c is the C-C bond length of the triple bonds
+(defn- four-six-carbophene-odd
+  "help function.  There is probably a fix that means we don't
+   need the helper functions but I don't have time."
+  ;[species1 species2 species3 a b c d units]
+  [species1 species2  a b c  units]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        buv (a-two 1.0)
+        auv (a-one 1.0)
+        f1 #(if (odd? %) s1 s2)
+        f2 #(if (odd? %) s2 s1)
+        aa (* (dec units) (+ b c (* 2 a (cmat/cos (/ ed/pi 6))) (* 2 c (cmat/cos (/ ed/pi 3)))))
+        apb (+ (* aa auv) (* aa buv))
+        apb_mag (cmat/normalise  apb)
+        apb_uv (cmat/normalise apb)
+        bma (- (* aa buv) (* aa auv))
+        bma_mag (cmat/normalise  bma)
+        bma_uv (cmat/normalise bma)
+        atm1 (+ (* (* 0.5 (- apb_mag a)) apb_uv)(* (* 0.5 (- b)) bma_uv))
+        atm2 (+ (* (* 0.5 (+ apb_mag a)) apb_uv)(* (* 0.5 (- b)) bma_uv))
+        atm3 (+ (* (* 0.5 (- apb_mag a)) apb_uv)(* (* 0.5 b) bma_uv))
+        atm4 (+ (* (* 0.5 (+ apb_mag a)) apb_uv)(* (* 0.5 b) bma_uv))
+        atm5 (+ atm4 (* c buv))
+        atm8 (+ atm2 (* c auv))
+        atm6 (+ atm5 (* b auv))
+        atm7 (+ atm8 (* b buv))
+        atm9 (- atm1 (* c buv))
+        atm10 (- atm9 (* b auv))
+        atm12 (- atm3 (* c auv))
+        atm11 (- atm12 (* b buv))
+        up  (+ a (* 2 c (cmat/cos (/ ed/pi 6))))
+        xup  (* 2 c (cmat/cos (/ ed/pi 6)))
+        vxup   [0.5000000000000001 0.8660254037844386 0]
+        vbxup   [-0.5000000000000001 0.8660254037844386 0]
+        vxdown [0.5000000000000001 -0.8660254037844386 0]
+        vbxdown [-0.5000000000000001 -0.8660254037844386 0]
+        lvs [(* aa auv) (* aa buv) [0 0 30]]
+        mol (atom-pos (flatten
+          [(basic/new-atom s2 atm1 nil nil nil nil 0)
+           (basic/new-atom s1 atm2 nil nil nil nil 1)
+           (basic/new-atom s1 atm3 nil nil nil nil 2)
+           (basic/new-atom s2 atm4 nil nil nil nil 3)
+           (basic/new-atom s1 atm5 nil nil nil nil 4)
+           (basic/new-atom s2 atm6 nil nil nil nil 5)
+           (basic/new-atom s1 atm7 nil nil nil nil 6)
+           (basic/new-atom s2 atm8 nil nil nil nil 7)
+           (basic/new-atom s1 atm9 nil nil nil nil 8)
+           (basic/new-atom s2 atm10 nil nil nil nil 9)
+           (basic/new-atom s1 atm11 nil nil nil nil 10)
+           (basic/new-atom s2 atm12 nil nil nil nil 11)
+     (map #(vector
+            (basic/new-atom (f2 %) (+ atm2 (* % [up 0 0])) nil nil nil nil 7)
+            (basic/new-atom (f1 %) (+ atm4 (* % [up 0 0])) nil nil nil nil 8)
+            (basic/new-atom (f2 %) (+ atm5 (* % [up 0 0])) nil nil nil nil 9)
+            (basic/new-atom (f1 %) (+ atm6 (* % [up 0 0])) nil nil nil nil 10)
+            (basic/new-atom (f2 %) (+ atm7 (* % [up 0 0])) nil nil nil nil 11)
+            (basic/new-atom (f1 %) (+ atm8 (* % [up 0 0])) nil nil nil nil 12)) (range 1 (dec units)))
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 7)
+       (basic/new-atom (f2 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 8)
+       (basic/new-atom (f1 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 9)
+       (basic/new-atom (f2 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 10)
+       (basic/new-atom (f1 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 11)
+       (basic/new-atom (f2 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 12)) (range 1 (int (Math/ceil (/ units 2)))))
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 7) ;only when units is even
+       (basic/new-atom (f2 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 8) ;only when units is even
+       (basic/new-atom (f1 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 9) ;only when units is even
+       (basic/new-atom (f2 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 10) ;only when units is even
+       (basic/new-atom (f1 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 11) ;only when units is even
+       (basic/new-atom (f2 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 12)) (range 1 (int (Math/floor (/ units 2)))))
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm1  (* % up vbxup)) nil nil nil nil 7)
+       (basic/new-atom (f2 %) (+ atm3  (* % up vbxup)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm9  (* % up vbxup)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm10  (* % up vbxup)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm11  (* % up vbxup)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm12  (* % up vbxup)) nil nil nil nil 12)) (range 1 (int (Math/ceil (/ units 2)))))
+(map #(vector
+       (basic/new-atom (f1 %) (+ atm1  (* % up vbxdown)) nil nil nil nil 7)
+       (basic/new-atom (f2 %) (+ atm3  (* % up vbxdown)) nil nil nil nil 8)
+       (basic/new-atom (f2 %) (+ atm9  (* % up vbxdown)) nil nil nil nil 9)
+       (basic/new-atom (f1 %) (+ atm10 (* % up vbxdown)) nil nil nil nil 10)
+       (basic/new-atom (f2 %) (+ atm11 (* % up vbxdown)) nil nil nil nil 11)
+       (basic/new-atom (f1 %) (+ atm12 (* % up vbxdown)) nil nil nil nil 12)) (range 1 (int (Math/floor (/ units 2)))))
+]))]
+        (hash-map :lvs lvs
+                  :mol (gmol/shift (* 0.385 (+ (first lvs) (second lvs)))
+                        (add-H mol lvs)))))
 
-  The origin in this puc is set at the center of the four member ring, thus many of the
-  points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
 
-  This is called graphenylene in The Open Organic Chemistry Journal, 2011, 5, (Suppl 1-M8) 117-126.
 
-  Usage: (four-six-carbophene 'B 'N  1.485 1.476 1.365  3)"
+(defn- four-six-carbophene-even
+  "help function.  There is probably a fix that means we don't
+   need the helper functions but I don't have time."
   ;[species1 species2 species3 a b c d units]
   [species1 species2  a b c  units]
   (let [s1 (.intern species1)
@@ -566,13 +651,12 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
        (basic/new-atom (f2 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 11)
        (basic/new-atom (f1 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxup)) nil nil nil nil 12)) (range 1 (int (Math/ceil (/ units 2)))))
 (map #(vector
-       (basic/new-atom (f2 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 7)
-       (basic/new-atom (f1 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 8)
-       (basic/new-atom (f2 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 9)
-       (basic/new-atom (f1 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 10)
-       (basic/new-atom (f2 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 11)
+       (basic/new-atom (f2 %) (+ atm2 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 7) ;only when units is even
+       (basic/new-atom (f1 %) (+ atm4 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 8) ;only when units is even
+       (basic/new-atom (f2 %) (+ atm5 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 9) ;only when units is even
+       (basic/new-atom (f1 %) (+ atm6 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 10) ;only when units is even
+       (basic/new-atom (f2 %) (+ atm7 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 11) ;only when units is even
        (basic/new-atom (f1 %) (+ atm8 (* (- units 3) [up 0 0]) [up 0 0] (* % up vxdown)) nil nil nil nil 12)) (range 1 (int (Math/floor (/ units 2)))))
-
 (map #(vector
        (basic/new-atom (f1 %) (+ atm1  (* % up vbxup)) nil nil nil nil 7)
        (basic/new-atom (f2 %) (+ atm3  (* % up vbxup)) nil nil nil nil 8)
@@ -594,6 +678,21 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
+(defn four-six-carbophene
+  "a is the C-C bond length in the rings
+   b is the C-C bond length between a ring carbon and a carbon involved in the triple bonds
+   c is the C-C bond length of the triple bonds
+
+  The origin in this puc is set at the center of the four member ring, thus many of the
+  points fall outside of the parallelepiped described by the lattice vectors if their vertex is at the origin.
+
+  This is called graphenylene in The Open Organic Chemistry Journal, 2011, 5, (Suppl 1-M8) 117-126.
+
+  Usage: (four-six-carbophene 'B 'N  1.485 1.476 1.365  3)"
+  ;[species1 species2 species3 a b c d units]
+  [species1 species2  a b c  units]
+  (if (odd? units) (four-six-carbophene-odd species1 species2 a b c units)
+                   (four-six-carbophene-even species1 species2 a b c units)))
 
 
 
@@ -832,7 +931,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn Octafunctionalized-Biphenylenes
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
-  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.2013093246767
 
   Usage (Octafunctionalized-Biphenylenes 'C 1.537659 1.426094 1.409636  1.469558) "
@@ -865,7 +964,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn Inorganic-Octafunctionalized-Biphenylenes
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
-  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.2013093246767
 
   Usage (Octafunctionalized-Biphenylenes 'B 'N 1.4995052857142857  1.465623 1.49851875  1.51432575) "
@@ -905,7 +1004,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn Octafunctionalized-Biphenylenes-type2-rectagularsc
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
-  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
 
   Usage: (Octafunctionalized-Biphenylenes-type2 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
@@ -972,7 +1071,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn Octafunctionalized-Biphenylenes-type2
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
-  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
 
   Usage: (Octafunctionalized-Biphenylenes-type2 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
@@ -1043,7 +1142,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn Octafunctionalized-Biphenylenes-type2-Cpdos
   "Precurser synthesized in: 'Octafunctionalized Biphenylenes: Molecular Precursors for Isomeric Graphene Nanostructures'
-  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
+  -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
 
   I used this function for the special purpose of defining certain carbon atoms differently for doing PDOS calculations in DFTB+.
@@ -1515,12 +1614,12 @@ researchers might find useful, but that I don't necessarily want to program in."
 
 (defn unrolled->parallelopipedsc
 "Creates a supercell of a graphitic material where the size and orientation of the supercell
-uses the n and m values used in nanotubes."
+uses the n and m values used in nanotubes.  n must be greater than or equal to m."
  [n m puc]
  (let [b (unrolled-nanotube n m puc)
        blvs [(first (:lvs b)) [0 (/ (second (second (:lvs b))) 3.0) 0] (last (:lvs b))]]
    (basic/unitcell blvs
-   (gmol/mol-filter {:coordinates (partial within-cell?? blvs [0 0 0])} (:mol b)))))
+   (xyz/atom-pos (gmol/mol-filter {:coordinates (partial within-cell?? blvs [0 0 0])} (:mol b))))))
 
 
 
@@ -1554,7 +1653,7 @@ uses the n and m values used in nanotubes."
                       (:coordinates (nearest-similar-crystal-point tube %)))) a))  0.1)
         p-tube (gmol/mol-filter {:coordinates #(and (>= (second %) 0) (<= (second %) (cmat/abs dis)))} tube)
         tubelvs [C [0 dis 0] (last lvs)]]
-    (hash-map :lvs tubelvs :mol (drop-overlapping-sc-atoms p-tube tubelvs 0 1 0))))
+    (hash-map :lvs tubelvs :mol (atom-pos (drop-overlapping-sc-atoms p-tube tubelvs 0 1 0)))))
 
 
 
