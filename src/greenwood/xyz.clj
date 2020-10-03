@@ -241,7 +241,7 @@ then the usage would be (xyz-str->atoms-readable test)."
     (xyz-iota->atoms-readable lines)))
   ([charge-column string]
   (let [lines (strng/split-lines string)]
-     (xyz-iota->atoms-readable lines))))
+     (xyz-iota->atoms-readable charge-column lines))))
 
 
 
