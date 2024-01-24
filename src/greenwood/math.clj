@@ -25,7 +25,7 @@
 (defn radians
   "Transforms the angle a from degrees to radians."
  ^double  [a]
-  (cmato/* pi  0.555555555555556  a))
+  (cmato/* pi  0.00555555555555556  a))
 
 (defn scalar-times-vector
   "multiplies each element of a vector by the value of scalar."
