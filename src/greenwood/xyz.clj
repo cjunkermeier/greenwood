@@ -667,7 +667,192 @@ function will parse *.sdf files."
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  LAMMPS Trajectory File Parser (.lammpstrj)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defn- parse-lammpstrj-box-bounds
+  "Parse the BOX BOUNDS line to extract box bounds.
+  Format: ITEM: BOX BOUNDS pp pp pp
+  Followed by lines like: 4.0833781541581260e-01 1.1529322184584935e+01"
+  [lines]
+  (let [bounds-lines (take 3 lines)
+        parsed (mapv (fn [line]
+                       (let [parts (strng/split (strng/trim line) #"\s+")]
+                         (if (>= (count parts) 2)
+                           [(read-string (first parts)) (read-string (second parts))]
+                           nil)))
+                     bounds-lines)]
+    {:xlo (nth (nth parsed 0) 0)
+     :xhi (nth (nth parsed 0) 1)
+     :ylo (nth (nth parsed 1) 0)
+     :yhi (nth (nth parsed 1) 1)
+     :zlo (nth (nth parsed 2) 0)
+     :zhi (nth (nth parsed 2) 1)}))
+
+
+
+
+(defn- box-bounds->lvs
+  "Convert LAMMPS BOX BOUNDS to lattice vectors.
+  LAMMPS BOX BOUNDS format:
+  ITEM: BOX BOUNDS pp pp pp
+  xlo xhi
+  ylo yhi
+  zlo zhi
+  
+  Returns lattice vectors as a vector of 3 coordinate vectors.
+  
+  THIS ONLY WORKS FOR RECTANGULAR BOXES."
+  [boxbounds]
+  [[(- (:xhi boxbounds) (:xlo boxbounds)) 0.0 0.0]
+   [0.0 (- (:yhi boxbounds) (:ylo boxbounds)) 0.0]
+   [0.0 0.0 (- (:zhi boxbounds) (:zlo boxbounds))]])
+
+
+
+(defn- lammps-atom-line->atom
+  "Convert a LAMMPS atom line to an atom structure.
+  Dynamically handles the column header to support various output formats."
+  [line column-map pos-idx]
+  (let [parts (strng/split (strng/trim line) #"\s+")
+        element-idx (get column-map "element")
+        x-idx (get column-map "x")
+        y-idx (get column-map "y")
+        z-idx (get column-map "z")
+        q-idx (get column-map "q")
+        bonds-idx (get column-map "c_bonds_count")]
+    (when (and (not-any? nil? [element-idx x-idx y-idx z-idx])
+               (>= (count parts) (max element-idx x-idx y-idx z-idx)))
+      (let [element (when element-idx (nth parts element-idx))
+            x (when x-idx (read-string (nth parts x-idx)))
+            y (when y-idx (read-string (nth parts y-idx)))
+            z (when z-idx (read-string (nth parts z-idx)))
+            q (when q-idx (try (read-string (nth parts q-idx)) (catch Exception _ nil)))
+            bonds (when bonds-idx (try (read-string (nth parts bonds-idx)) (catch Exception _ nil)))]
+        (when element
+          (basic/new-atom (.intern element)
+                         (cmat/matrix [x y z])
+                         q
+                         nil
+                         nil
+                         bonds
+                         pos-idx))))))
+
+
+(defn- parse-lammpstrj-timestep
+  "Parse a single LAMMPS timestep from a sequence of lines.
+  Lines should be the chunk for one timestep."
+  [lines]
+  (try
+    (let [lines-vec (vec (map strng/trim lines))
+          timestep (when (and (> (count lines-vec) 1)
+                              (= "ITEM: TIMESTEP" (nth lines-vec 0)))
+                     (try (read-string (nth lines-vec 1)) (catch Exception _ nil)))
+          natoms-line-idx (first (utils/positions #(= % "ITEM: NUMBER OF ATOMS") lines-vec))
+          natoms (when natoms-line-idx
+                   (try (read-string (nth lines-vec (+ natoms-line-idx 1))) (catch Exception _ nil)))
+          box-line-idx (first (utils/positions #(= % "ITEM: BOX BOUNDS pp pp pp") lines-vec))
+          box-bounds (when box-line-idx
+                       (parse-lammpstrj-box-bounds (drop (+ box-line-idx 1) lines-vec)))
+          atoms-line-idx (first (utils/positions #(strng/starts-with? % "ITEM: ATOMS") lines-vec))
+          atoms-header (when atoms-line-idx (nth lines-vec atoms-line-idx))
+          column-names (when atoms-header
+                         (let [header-parts (strng/split atoms-header #"\s+")
+                               cols (drop 2 header-parts)]
+                           (zipmap cols (range (count cols)))))
+          atom-lines (when (and atoms-line-idx natoms)
+                       (take natoms (drop (+ atoms-line-idx 1) lines-vec)))]
+      (when (and timestep natoms)
+        {:timestep timestep
+         :natoms natoms
+         :lvs (box-bounds->lvs box-bounds)
+         :column-names column-names
+         :mol (filterv some? (mapv (fn [line idx] (lammps-atom-line->atom line column-names idx))
+                                     atom-lines
+                                     (range natoms)))}))
+    (catch Exception e
+      (println "Error parsing timestep:" e)
+      nil)))
+
+
+
+
+
+
+
+
+
+(defn parse-lammpstrj
+  "Parse a LAMMPS trajectory file and return a vector of timesteps.
+  Each timestep contains: :timestep, :natoms, :box-bounds, :column-names, and :atoms
+
+  This function should only be used to parse small lammpstrj files.
+	
+  Usage: (parse-lammpstrj \"/path/to/file.lammpstrj\")"
+  [filename]
+  (let [lines (with-open [rdr (clojure.java.io/reader filename)]
+                (into [] (line-seq rdr)))
+        timestep-indices (into [] (utils/positions #(= % "ITEM: TIMESTEP") lines))
+        timestep-ranges (partition 2 1 (conj (vec timestep-indices) (count lines)))]
+    (filterv some? (mapv (fn [[start end]]
+                           (parse-lammpstrj-timestep (subvec lines start end)))
+                         timestep-ranges))))
+
+
+
+
+
+
+(defn lammpstrj-chunks
+  "Create foldable chunks directly from a LAMMPS trajectory file.
+  Returns a foldable collection of timestep lines.
+
+ This function should be used to parse large lammpstrj files.
+  
+  Usage: (lammpstrj-chunks filename start stop taken)
+  taken means take every nth recorded time step
+  "
+  [filename start stop taken]
+  (let [lines (vec (iota/seq filename))
+        timestep-indices (into [] (utils/positions #(re-find #"ITEM: TIMESTEP" %) lines))
+        ;; Filter timesteps in the desired range
+        filtered-indices (filterv (fn [idx]
+                                    (when (< (inc idx) (count lines))
+                                      (let [ts-num (try (read-string (strng/trim (nth lines (inc idx))))
+                                                        (catch Exception _ -1))]
+                                        (and (>= ts-num start) (<= ts-num stop)))))
+                                  timestep-indices)
+        ;; Take every taken recorded time step, (i.e., take every nth recorded time step)
+        sampled-indices (take-nth taken filtered-indices)
+        ;; Create ranges for each timestep to the next ITEM: TIMESTEP
+        timestep-ranges (map (fn [idx]
+                               (let [next-idx (first (drop-while #(<= % idx) timestep-indices))]
+                                 (if next-idx
+                                   [idx next-idx]
+                                   [idx (count lines)])))
+                             sampled-indices)]
+    (r/map (fn [[start end]]
+             (subvec lines start end))
+           timestep-ranges)))
+
+
+
+
+(defn parse-lammpstrj-for-foldable
+  "Parse a LAMMPS timestep chunk for use with foldable-chunks.
+  Returns a map compatible with downstream processing like parse-xmolout.
+
+  This function should be used to parse large lammpstrj files.
+
+  Similar interface to parse-xmolout but for LAMMPS files."
+  [lines]
+  (let [parsed (parse-lammpstrj-timestep lines)]
+    (when parsed
+      {:timestep (:timestep parsed)
+       :mol (:mol parsed)
+       :lvs (:lvs parsed)})))
 
 
 
@@ -711,3 +896,23 @@ function will parse *.sdf files."
 (r/map (partial drop 2))
      (r/map xyz-iota->atoms)
      (into []))
+
+
+;this will parse every other record in /Users/junky/3netC10.lammpstrj
+#_(->> (xyz/lammpstrj-chunks "/Users/junky/3netC10.lammpstrj" 0 300 2)
+     (r/map xyz/parse-lammpstrj-for-foldable)
+     (r/map :mol)
+     (r/map out/write-xyz)
+     (r/map #(utils/append-file "/Users/junky/Desktop/graphene.xyz" %))
+     (into []))
+
+;this will parse every record in /Users/junky/3netC10.lammpstrj
+#_(->> (xyz/lammpstrj-chunks "/Users/junky/3netC10.lammpstrj" 0 300 1)
+     (r/map xyz/parse-lammpstrj-for-foldable)
+     (r/map :mol)
+     (r/map out/write-xyz)
+     (r/map #(utils/append-file "/Users/junky/Desktop/graphene.xyz" %))
+     (into []))
+
+;(def netc (xyz/parse-lammpstrj "/Users/junky/3netC10.lammpstrj"))
+
