@@ -12,17 +12,18 @@
             [clojure.set :as cset]
             [clojure.core.matrix :as cmat]
             [greenwood.neighbors :as gneigh]
-           [greenwood.math :as gmath]
+            [greenwood.math :as gmath]
             [greenwood.contrib-math :as gcmath]
             [greenwood.basics :as basic]
             [greenwood.utils :as gutils]
             [greenwood.xyz :as xyz]
+            [greenwood.supercell :as sc]
 ))
 
 
 
 
-(comment   "The atomic gutils/positions, lattice vectors, reciprical lattice vectors all came from
+(comment   "The atomic positions, lattice vectors, reciprical lattice vectors all came from
 Peres et al. 'Scanning Tunneling Microscopy currents on locally disordered graphene'
 PRB 79 155442.
 
@@ -60,7 +61,8 @@ the B-N bond length in a sheet is 1.45Å")
   "The honeycomb lattice has a unit cell represented in Fig. 1 by the
 vectors a1 and a2, such that |a1| = |a2| = a, with a ≃ 2.461.
 Where a0 = a/√3 ≃ 1.421 is the carbon-carbon distance.
-  Usage: (graphene-primitive-unit-cell 'C' 'C' 2.461)"
+  Usage: (graphene-primitive-unit-cell 'C' 'C' 2.461)
+  Usage (graphene-primitive-unit-cell 'B' 'N' 2.504)"
   [C1 C2 a]
   (hash-map :lvs [(a-one a) (a-two a) [0 0 30]]
    :mol [(basic/new-atom (.intern C1) (* 1/3 (+ (a-one a) (a-two a))) nil nil nil nil 0)
@@ -696,47 +698,6 @@ rtl is a boolean that determins if the C atoms with the largest y-values are dis
 
 
 
-(defn junkermeier
-  "a is the graphene lattice constant
-
-  Usage: (junkermeier 'B 'N 1.485 'H 1.09)"
-  [species1 species2 a species3 b]
-  (let [s1 (.intern species1)
-        s2 (.intern species2)
-        s3 (.intern species3)
-        buv (a-two 1.0)
-        auv (a-one 1.0)
-        A (* 3 a auv)
-        B (* 3 a buv)
-        apb (+ A B)
-        apb_uv (cmat/normalise apb)
-        bma (- B A)
-        bma_uv (cmat/normalise bma)
-        hx (* b (cmat/cos (/ ed/pi 3)))
-        hy (* b (cmat/sin (/ ed/pi 3)))
-        h1 (* b (cmat/normalise (+ (* 0.45 apb_uv) (* -0.45 bma_uv) (* 0.1 [0 0 1]))))
-        h2 (* b (cmat/normalise (+ (* 0.45 apb_uv) (* 0.45 bma_uv) (* -0.1 [0 0 1]))))
-        h3 (* b (cmat/normalise (+ (* -0.45 apb_uv) (* -0.45 bma_uv) (* -0.1 [0 0 1]))))
-        h4 (* b (cmat/normalise (+ (* -0.45 apb_uv) (* 0.45 bma_uv) (* 0.1 [0 0 1]))))
-        ]
-        (hash-map :lvs  [A B [0 0 30]]
-           :mol [(basic/new-atom s1 (- (* 0.5 apb) (* 0.5 a apb_uv)) nil nil nil nil 0)
-            (basic/new-atom s2 (+ (* 0.5 apb) (* 0.5 a apb_uv)) nil nil nil nil 1)
-            (basic/new-atom s2 (+ (* 0.5 A) (* 0.5 a apb_uv)) nil nil nil nil 2)
-            ;(basic/new-atom s3 (+ (* 0.5 A) (* 0.5 a apb_uv) (* hx apb_uv) (* -1 hy bma_uv)) nil nil nil nil nil)
-            (basic/new-atom s3 (+ (* 0.5 A) (* 0.5 a apb_uv) h1) nil nil nil nil 3)
-
-            (basic/new-atom s2 (+ (* 0.5 B) (* 0.5 a apb_uv)) nil nil nil nil 4)
-            (basic/new-atom s3 (+ (* 0.5 B) (* 0.5 a apb_uv) h2) nil nil nil nil 5)
-
-            (basic/new-atom s1 (+ A (* 0.5 B) (* -0.5 a apb_uv)) nil nil nil nil 6)
-            (basic/new-atom s3 (+ A (* 0.5 B) (* -0.5 a apb_uv) h3) nil nil nil nil 7)
-
-            (basic/new-atom s1 (+ B (* 0.5 A) (* -0.5 a apb_uv)) nil nil nil nil 8)
-            (basic/new-atom s3 (+ B (* 0.5 A) (* -0.5 a apb_uv) h4) nil nil nil nil 9)
-            ])))
-
-
 
 ;(def sclbcaa (shift (* -0.5 (+ ((comp first :lvs) sclbc) ((comp second :lvs) sclbc)))  (:mol sclbc))
 
@@ -798,19 +759,25 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
 
 (defn foureighteight-archimedean-tile
   "Found in The Open Organic Chemistry Journal, 2011, 5, (Suppl 1-M8) 117-126.
- Usage: (foureighteight-archimedean-tile 'C 1.485 1.476)
+  
+  Also in, Ultrahigh Electron Thermal Conductivity in T-Graphene, Biphenylene, and Net-Graphene by Zhen Tong, Alessandro Pecchia, ChiYung Yam, Traian Dumitrică, and Thomas Frauenheim. DOI: 10.1002/aenm.202200657.  (Called T-Graphene in this paper)
+  
+ Usage: (foureighteight-archimedean-tile 'C' 3.46)
 
   THIS DOESN'T HAVE THE CORRECT LVS STRUCTURE FOR MAKING TUBES."
-  [species1 a b]
+  [species1 a]
   (let [s1 (.intern species1)
-        cp4 (cmat/cos (/ ed/pi 4))
-        A [(+ b (* 2 a cp4)) 0 0]
-        B [0 (+ b (* 2 a cp4)) 0]]
-    (hash-map :lvs [A B [0 0 30]]
-     :mol [(basic/new-atom s1 (+ (* 0.5 A) (* 0.5 b (cmat/normalise B))) nil nil nil nil 0)
-      (basic/new-atom s1 (+ (* 0.5 B) (* (+ (* 0.5 b) (* 2 a cp4)) (cmat/normalise A))) nil nil nil nil 1)
-      (basic/new-atom s1 (+ (* 0.5 A) (* (+ (* 0.5 b) (* 2 a cp4)) (cmat/normalise B))) nil nil nil nil 2)
-      (basic/new-atom s1 (+ (* 0.5 b (cmat/normalise A)) (* 0.5 B)) nil nil nil nil 3)])))
+        atm1 [0.800  0.500  0.000]
+        atm2 [0.200  0.500  0.000]
+        atm3 [0.500  0.800  0.000]
+        atm4 [0.500  0.200  0.000]
+        puc (hash-map :lvs [[a 0 0] [0 a 0] [0 0 30]]
+            :mol
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s1 atm2 nil nil nil nil 1)
+                  (basic/new-atom s1 atm3 nil nil nil nil 2)
+                  (basic/new-atom s1 atm4 nil nil nil nil 3)])]
+(hash-map :mol (sc/fractional->cartesian (:mol puc) (:lvs puc)) :lvs (:lvs puc) )))
 
 
 
@@ -1007,7 +974,7 @@ https://benthamopen.com/ABSTRACT/TOOCJ-5-117
   -by Florian Schlütter, Tomohiko Nishiuchi, Volker Enkelmann, and Klaus Müllen
    DOI: 10.1002/ange.201309324
 
-  Usage: (Octafunctionalized-Biphenylenes-type2 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
+  Usage: (Octafunctionalized-Biphenylenes-type2-rectagularsc 'C 'C 1.539807 1.415841  1.394072  1.450921 1.436087 1.441179 1.443518)"
   [species1 species2 a b c d e f g]
   (let [s1 (.intern species1)
         s2 (.intern species2)
@@ -1382,6 +1349,73 @@ given in the net-W function below.
 
 
 
+(defn net-graphene
+  "Found in Ultrahigh Electron Thermal Conductivity in T-Graphene, Biphenylene, and Net-Graphene by Zhen Tong, Alessandro Pecchia, ChiYung Yam, Traian Dumitrică, and Thomas Frauenheim. DOI: 10.1002/aenm.202200657.  (Called T-Graphene in this paper)
+  
+ Usage: (gr/net-graphene 'C' 6.27 4.39)
+
+  THIS DOESN'T HAVE THE CORRECT LVS STRUCTURE FOR MAKING TUBES."
+  [species1 a b]
+  (let [s1 (.intern species1)
+        atm1 [0.0   0.0   0.0]
+        atm2 [0.0   0.33029613   0.0]
+        atm3 [0.18561882   0.82687926   0.0]
+        atm4 [0.18561882   0.50341684   0.0]
+        atm5 [0.38069233   0.33029613   0.0]
+        atm6 [0.38069233   0.0   0.0]
+        atm7 [0.5757657   0.82687926   0.0]
+        atm8 [0.5757657   0.50341684   0.0]
+        atm9 [0.8134053   0.82687926   0.0]
+        atm10 [0.8134053   0.50341684   0.0]
+        puc (hash-map :lvs [[a 0 0] [0 b 0] [0 0 30]]
+            :mol
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s1 atm2 nil nil nil nil 1)
+                  (basic/new-atom s1 atm3 nil nil nil nil 2)
+                  (basic/new-atom s1 atm4 nil nil nil nil 3)
+                  (basic/new-atom s1 atm5 nil nil nil nil 4)
+                  (basic/new-atom s1 atm6 nil nil nil nil 5)
+                  (basic/new-atom s1 atm7 nil nil nil nil 6)
+                  (basic/new-atom s1 atm8 nil nil nil nil 7)
+                  (basic/new-atom s1 atm9 nil nil nil nil 8)
+                  (basic/new-atom s1 atm10 nil nil nil nil 9)])]
+(hash-map :mol (sc/fractional->cartesian (:mol puc) (:lvs puc)) :lvs (:lvs puc) )))
+
+
+(defn A-graphene
+  "Found in Xu, Li-Chun, et al. 'Two dimensional Dirac carbon allotropes from graphene.' Nanoscale 6.2 (2014): 1113-1118.
+  
+ Usage: (gr/A-graphene 'B''N' 4.565814919 5.170296988)
+
+  THIS DOESN'T HAVE THE CORRECT LVS STRUCTURE FOR MAKING TUBES."
+  [species1 species2 a b]
+  (let [s1 (.intern species1)
+        s2 (.intern species2)
+        atm1 [0.009611039   -6.4775004E-6   0.0]
+        atm2 [0.3237223   -6.4775004E-6   0.0]
+        atm3 [0.50301796   0.22373737   0.0]
+        atm4 [0.83031535   0.22373737   0.0]
+        atm5 [0.50488746   0.49999177   0.0]
+        atm6 [0.82844585   0.49999177   0.0]
+        atm7 [0.5030124   0.77626044   0.0]
+        atm8 [0.83032095   0.77626044   0.0]
+        puc (hash-map :lvs [[a 0 0] [0 b 0] [0 0 30]]
+            :mol
+                 [(basic/new-atom s1 atm1 nil nil nil nil 0)
+                  (basic/new-atom s2 atm2 nil nil nil nil 1)
+                  (basic/new-atom s1 atm3 nil nil nil nil 2)
+                  (basic/new-atom s2 atm4 nil nil nil nil 3)
+                  (basic/new-atom s2 atm5 nil nil nil nil 4)
+                  (basic/new-atom s1 atm6 nil nil nil nil 5)
+                  (basic/new-atom s1 atm7 nil nil nil nil 6)
+                  (basic/new-atom s2 atm8 nil nil nil nil 7)])]
+(hash-map :mol (sc/fractional->cartesian (:mol puc) (:lvs puc)) :lvs (:lvs puc) )))
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1617,9 +1651,9 @@ researchers might find useful, but that I don't necessarily want to program in."
 uses the n and m values used in nanotubes.  n must be greater than or equal to m."
  [n m puc]
  (let [b (unrolled-nanotube n m puc)
-       blvs [(first (:lvs b)) [0 (/ (second (second (:lvs b))) 3.0) 0] (last (:lvs b))]]
+       blvs [(first (:lvs b)) [0.0 (/ (second (second (:lvs b))) 3.0) 0.0] [0.0 0.0 30.0]]]
    (basic/unitcell blvs
-   (xyz/atom-pos (gmol/mol-filter {:coordinates (partial within-cell?? blvs [0 0 0])} (:mol b))))))
+   (xyz/atom-pos (gmol/mol-filter {:coordinates (partial within-cell?? blvs [0.0 0.0 0.0])} (:mol b))))))
 
 
 
