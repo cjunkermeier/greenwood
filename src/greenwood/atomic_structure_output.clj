@@ -6,6 +6,7 @@
    [greenwood.mol :as jmol]
    [greenwood.xyz :as xyz]
    [greenwood.math :as jmath]
+   [greenwood.supercell :as sc]
    [clojure.pprint :as pp]
    [greenwood.utils :as utils]))
 
@@ -245,6 +246,12 @@ lattice type symbol used is H."
   [mol]
   (let [un-named (fn [x y]
                    (cond
+                     (= 6 (count y))
+                     (let [[a b c d e f] (map inc y)]
+                       (pp/cl-format nil "CONECT~5D~5D~5D~5D~5D~5D~5D" (inc x) a b c d e f))
+                     (= 5 (count y))
+                     (let [[a b c d e] (map inc y)]
+                       (pp/cl-format nil "CONECT~5D~5D~5D~5D~5D~5D" (inc x) a b c d e))
                      (= 4 (count y))
                      (let [[a b c d] (map inc y)]
                        (pp/cl-format nil "CONECT~5D~5D~5D~5D~5D" (inc x) a b c d))
@@ -260,6 +267,11 @@ lattice type symbol used is H."
                      (= 0 (count y))
                      (pp/cl-format nil "CONECT~5D" (inc x))))]
     (str (strng/join utils/endline (map #(un-named %1 %2) (iterate inc 0) (map get-npos- mol))) utils/endline)))
+
+
+
+
+
 
 
 
@@ -287,9 +299,47 @@ lattice type symbol used is H."
     (str "HEADER" utils/endline
       "AUTHOR    GENERATED IN GRNWD"
          utils/endline
-      (write-pdb-HETATM (xyz/atom-pos mol))
-      (write-pdb-connect (xyz/atom-pos mol))
+      (write-pdb-HETATM mol)
+      (write-pdb-connect  mol)
       "END"))))
+
+
+
+
+
+
+
+
+
+
+
+(defn write-pdb-wo-connect
+"writes a PDB files without connecting neighbors"
+  ([mol lat-param space-group]
+   (if (nil? ((comp :neigh first) mol))
+                 (str "HEADER" utils/endline
+                  "AUTHOR    GENERATED IN JMD" utils/endline
+                 (write-pdb-lat lat-param space-group)
+                 (write-pdb-HETATM (xyz/atom-pos mol))
+                 "END")
+    (str "HEADER" utils/endline
+      "AUTHOR    GENERATED IN JMD" utils/endline
+      (write-pdb-lat lat-param space-group)
+      (write-pdb-HETATM (xyz/atom-pos mol))
+      "END")))
+  ([mol]
+    (if (nil? ((comp :neigh first) mol))
+                 (str "HEADER" utils/endline
+                  "AUTHOR    GENERATED IN GRNWD"
+                      utils/endline
+                 (write-pdb-HETATM (xyz/atom-pos mol))
+                 "END")
+    (str "HEADER" utils/endline
+      "AUTHOR    GENERATED IN GRNWD"
+         utils/endline
+      (write-pdb-HETATM (xyz/atom-pos mol))
+      "END"))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -589,3 +639,82 @@ do then we sort the mol by :pos."
   (flatten
    [(str "lattice_vector " (utils/inter-cat-tree ["\nlattice_vector " " "] lvs))
     (map #(str "atom " (strng/join " " (:coordinates %)) " " (:species %) ) mol)])))
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; XCrySDen Formats - only some types of structures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn write-xcrysden-crystal
+"Use this for 3D crystal structures."
+  [puc]
+  (strng/join utils/endline
+     ["CRYSTAL"
+     "PRIMVEC"
+     (utils/inter-cat-tree [utils/endline "  "] (:lvs puc))
+     "PRIMCOORD 1"
+     (str (count (:mol puc)) " 1")
+         (utils/inter-cat-tree [utils/endline "   "] (get-atoms (:mol puc) true))]))
+
+
+
+
+(defn write-xcrysden-slab
+"Use this for 2D crystal structures."
+  [puc]
+  (strng/join utils/endline
+     ["SLAB"
+     "PRIMVEC"
+     (utils/inter-cat-tree [utils/endline "  "] (:lvs puc))
+     "PRIMCOORD 1"
+     (str (count (:mol puc)) " 1")
+         (utils/inter-cat-tree [utils/endline "   "] (get-atoms (:mol puc) true))]))
+
+
+
+
+(defn write-xcrysden-molecule
+"Use this for molecules structures."
+  [mol]
+  (str "ATOMS"  utils/endline (utils/inter-cat-tree [utils/endline "   "] (get-atoms mol true)) utils/endline))
+
+
+
+  
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ThreeBodyTB Formats
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn write-threebodytb
+ [puc]
+ (str
+  "makecrys(["
+ (strng/join ""
+ [(utils/inter-cat-tree ["; " " "] (:lvs puc))
+ "], ["
+      (as-> puc x
+            (sc/cartesian->fractional (:mol x) (:lvs x))
+            (map :coordinates x)
+            (utils/inter-cat-tree ["; " " "] x))
+ "], ["
+      (->> puc
+            (:mol)
+            (map :species)
+            (strng/join " "))
+   ])
+"])"
+))
+
+
+
