@@ -665,8 +665,6 @@ function will parse *.sdf files."
 
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  LAMMPS Trajectory File Parser (.lammpstrj)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -787,9 +785,7 @@ function will parse *.sdf files."
 (defn parse-lammpstrj
   "Parse a LAMMPS trajectory file and return a vector of timesteps.
   Each timestep contains: :timestep, :natoms, :box-bounds, :column-names, and :atoms
-
-  This function should only be used to parse small lammpstrj files.
-	
+  
   Usage: (parse-lammpstrj \"/path/to/file.lammpstrj\")"
   [filename]
   (let [lines (with-open [rdr (clojure.java.io/reader filename)]
@@ -805,11 +801,26 @@ function will parse *.sdf files."
 
 
 
+
+
+(defn parse-lammpstrj-for-foldable
+  "Parse a LAMMPS timestep chunk for use with foldable-chunks.
+  Returns a map compatible with downstream processing like parse-xmolout.
+  
+  Similar interface to parse-xmolout but for LAMMPS files."
+  [lines]
+  (let [parsed (parse-lammpstrj-timestep lines)]
+    (when parsed
+      {:timestep (:timestep parsed)
+       :mol (:mol parsed)
+       :lvs (:lvs parsed)})))
+
+
+
+
 (defn lammpstrj-chunks
   "Create foldable chunks directly from a LAMMPS trajectory file.
   Returns a foldable collection of timestep lines.
-
- This function should be used to parse large lammpstrj files.
   
   Usage: (lammpstrj-chunks filename start stop taken)
   taken means take every nth recorded time step
@@ -837,25 +848,8 @@ function will parse *.sdf files."
              (subvec lines start end))
            timestep-ranges)))
 
-
-
-
-(defn parse-lammpstrj-for-foldable
-  "Parse a LAMMPS timestep chunk for use with foldable-chunks.
-  Returns a map compatible with downstream processing like parse-xmolout.
-
-  This function should be used to parse large lammpstrj files.
-
-  Similar interface to parse-xmolout but for LAMMPS files."
-  [lines]
-  (let [parsed (parse-lammpstrj-timestep lines)]
-    (when parsed
-      {:timestep (:timestep parsed)
-       :mol (:mol parsed)
-       :lvs (:lvs parsed)})))
-
-
-
+    
+    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -898,6 +892,13 @@ function will parse *.sdf files."
      (into []))
 
 
+
+#_(->> (take-foldable-chunks "/Users/chadjunkermeier/Desktop/xmolout" 1)
+(r/map (partial drop 2))
+     (r/map xyz-iota->atoms)
+     (into []))
+
+
 ;this will parse every other record in /Users/junky/3netC10.lammpstrj
 #_(->> (xyz/lammpstrj-chunks "/Users/junky/3netC10.lammpstrj" 0 300 2)
      (r/map xyz/parse-lammpstrj-for-foldable)
@@ -914,5 +915,4 @@ function will parse *.sdf files."
      (r/map #(utils/append-file "/Users/junky/Desktop/graphene.xyz" %))
      (into []))
 
-;(def netc (xyz/parse-lammpstrj "/Users/junky/3netC10.lammpstrj"))
 
