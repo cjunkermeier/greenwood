@@ -91,3 +91,26 @@ Usage:
 ;(def Z [0 0 0.5])
 ;(generate-band-kpoints [Gamma K M Gamma] [10 5 8])
 ;(generate-band-kpoints [Gamma X Z Y Gamma Z] [30 30 30 30 30])
+
+
+;carbophenes
+;(def M [0.5 0.0 0.0])
+;(def Gamma [0 0 0])
+;(def K [1/3 2/3 0])
+;(generate-band-kpoints [M Gamma K M] [34 32 25])
+  (vec (* ed/tau (cross (second lvs) (last lvs)) (/ 1 (dot (first lvs) (cross (second lvs) (last lvs)))))
+       (* ed/tau (cross (last lvs) (first lvs)) (/ 1 (dot (first lvs) (cross (second lvs) (last lvs)))))
+       (* ed/tau (cross (first lvs) (second lvs)) (/ 1 (dot (first lvs) (cross (second lvs) (last lvs)))))))
+
+
+
+
+
+;(def Gamma [0 0 0])
+;(def K [1/3 1/3 0])
+;(def M [0.5     0.0     0.0])
+;(def X [0.5 0 0])
+;(def Y [0 0.5 0])
+;(def Z [0 0 0.5])
+;(generate-band-kpoints [Gamma K M Gamma] [10 5 8])
+;(generate-band-kpoints [Gamma X Z Y Gamma Z] [30 30 30 30 30])
