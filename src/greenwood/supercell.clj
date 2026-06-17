@@ -799,6 +799,10 @@ lattice parameters for mol."
 
 
 
+
+
+
+
 (defn- normalize- [[x y z]]
   (let [mag (Math/sqrt (+ (* x x) (* y y) (* z z)))]
     (if (zero? mag)
@@ -856,4 +860,3 @@ lattice parameters for mol."
                       (+ y (* u dy))
                       (+ z (* u dz))])))
           atoms)))))
-
