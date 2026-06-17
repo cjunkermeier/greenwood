@@ -380,14 +380,12 @@ returning the averages as a new coordinate."
 
 
 
-
 (defn rotate-mol
   "pnt2 and pnt1 are both 3-tuples that define the axis.
 angle is the amount of ration this is a scalar value."
    [mol pt1 pt2 angle]
   (let [f #(gmath/the-rotation-function % pt1 pt2 angle)]
            (update-mol :coordinates f mol)))
-
 
 
 
