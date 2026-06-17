@@ -793,3 +793,67 @@ lattice parameters for mol."
            (apply multiples (map (comp gmath/round-decimal length first) lvss))
            (apply multiples (map (comp gmath/round-decimal length second) lvss))
            (apply multiples (map (comp gmath/round-decimal length last) lvss))))))
+
+
+
+
+
+
+(defn- normalize- [[x y z]]
+  (let [mag (Math/sqrt (+ (* x x) (* y y) (* z z)))]
+    (if (zero? mag)
+      [0 0 0]
+      [(/ x mag) (/ y mag) (/ z mag)])))
+      
+      
+
+
+
+(defn apply-compressive-tensile-wave-strain
+  "Applies a periodic plane-wave displacement with a specified strain amplitude.
+
+   strain  = maximum tensile/compressive strain (dimensionless)
+   k-frac  = [nx ny nz] integers defining wavevector (periodic)
+   phase   = phase in radians
+   
+   Strain is purely epislon = frac{partial u}{partial s} along the propagation direction. No shear components are introduced.
+
+   Displacement direction is automatically parallel to k (pure longitudinal).
+   
+   Usage: (apply-displacement-wave-strain puc 0.05 [1 0 0] 0.0), where
+   k = (2 pi / L_x, 0, 0), direction is in the x-direction, and max strain is plus-minus 5 percent.
+   
+   This is essentially a single-mode phonon construction at a chosen k-point, expressed in real space."
+  [structure strain k-frac phase]
+  (let [[[Lx _ _] [_ Ly _] [_ _ Lz]] (:lvs structure)
+
+        ;; build k-vector
+        [nx ny nz] k-frac
+        kx (* 2.0 Math/PI (/ nx Lx))
+        ky (* 2.0 Math/PI (/ ny Ly))
+        kz (* 2.0 Math/PI (/ nz Lz))
+
+        ;; magnitude of k
+        k-mag (Math/sqrt (+ (* kx kx) (* ky ky) (* kz kz)))
+
+        ;; normalized direction (parallel to k)
+        [dx dy dz] (if (zero? k-mag)
+                     [0 0 0]
+                     [(/ kx k-mag) (/ ky k-mag) (/ kz k-mag)])
+
+        ;; convert strain → displacement amplitude
+        amplitude (if (zero? k-mag) 0.0 (/ strain k-mag))]
+
+    (update structure :mol
+      (fn [atoms]
+        (mapv
+          (fn [atom]
+            (let [[x y z] (:coordinates atom)
+                  kr (+ (* kx x) (* ky y) (* kz z))
+                  u (* amplitude (Math/sin (+ kr phase)))]
+              (assoc atom :coordinates
+                     [(+ x (* u dx))
+                      (+ y (* u dy))
+                      (+ z (* u dz))])))
+          atoms)))))
+
